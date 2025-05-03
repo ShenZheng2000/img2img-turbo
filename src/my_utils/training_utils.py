@@ -210,7 +210,7 @@ def build_transform(image_prep):
         T = transforms.Compose([
             transforms.Resize((512, 512), interpolation=Image.LANCZOS)
         ])
-    # NOTE: add resize of 784 and 362 for the relight dataset
+    # NOTE: add resize of 784 and 384 for the relight dataset
     elif image_prep in ["resize_784"]:
         T = transforms.Compose([
             transforms.Resize((784, 784), interpolation=Image.LANCZOS)
@@ -218,6 +218,18 @@ def build_transform(image_prep):
     elif image_prep in ["resize_384"]:
         T = transforms.Compose([
             transforms.Resize((384, 384), interpolation=Image.LANCZOS)
+        ])
+    elif image_prep in ["resize_416"]:
+        T = transforms.Compose([
+            transforms.Resize((416, 416), interpolation=Image.LANCZOS)
+        ])
+    elif image_prep in ["resize_448"]:
+        T = transforms.Compose([
+            transforms.Resize((448, 448), interpolation=Image.LANCZOS)
+        ])
+    elif image_prep in ["resize_480"]:
+        T = transforms.Compose([
+            transforms.Resize((480, 480), interpolation=Image.LANCZOS)
         ])
     elif image_prep == "no_resize":
         T = transforms.Lambda(lambda x: x)
