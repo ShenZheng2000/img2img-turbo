@@ -1,4 +1,4 @@
-name: img2img-turbo
+name: img2img-turbo2
 channels:
   - pytorch
   - defaults

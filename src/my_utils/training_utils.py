@@ -124,6 +124,8 @@ def parse_args_paired_training(input_args=None):
     parser.add_argument("--mixed_precision", type=str, default=None, choices=["no", "fp16", "bf16"],)
     parser.add_argument("--enable_xformers_memory_efficient_attention", action="store_true", help="Whether or not to use xformers.")
     parser.add_argument("--set_grads_to_none", action="store_true",)
+    
+    parser.add_argument("--no_diffaug", action="store_true", help="Disable differentiable augmentation.")
 
     if input_args is not None:
         args = parser.parse_args(input_args)
