@@ -21,7 +21,7 @@
 #     --test_image_prep "resize_784"
 
 
-# v2: keep the background for base image                     [Clean FID score: 105.9337]
+# v2: KEEP the background for base image                     [Clean FID score: 105.9337]
 # accelerate launch src/train_pix2pix_turbo.py \
 #     --pretrained_model_name_or_path="stabilityai/sd-turbo" \
 #     --output_dir="output/pix2pix_turbo/Seed_Direction_4_24" \
@@ -98,3 +98,18 @@
 #     --input_dir "data/Seed_Direction_4_24_use_target_bg/test_A" \
 #     --prompt "Relit with golden-hour sunlight from behind, softly outlining the subject in amber tones, casting long, fading shadows, and creating a calm, atmospheric glow." \
 #     --output_dir "output/pix2pix_turbo/Seed_Direction_4_24_use_target_bg/result_A"
+
+# NOTE: place data in /scratch, not local folder, or data3/ (will slow down)
+# candlelight_1_may4 (same settings as v2, but different dataset)
+# NOTE: no_resize same as resize_784 (since the original image is 784x784)
+accelerate launch src/train_pix2pix_turbo.py \
+    --pretrained_model_name_or_path="stabilityai/sd-turbo" \
+    --output_dir="/scratch1/shenzhen/img2img-turbo/output/pix2pix_turbo/candlelight_1_may4" \
+    --dataset_folder="/scratch1/shenzhen/img2img-turbo/data/candlelight_1_may4" \
+    --resolution=512 \
+    --train_batch_size=1 \
+    --enable_xformers_memory_efficient_attention --viz_freq 25 \
+    --track_val_fid \
+    --report_to "wandb" --tracker_project_name "pix2pix_turbo_candlelight_1_may4" \
+    --train_image_prep "no_resize" \
+    --test_image_prep "no_resize"
