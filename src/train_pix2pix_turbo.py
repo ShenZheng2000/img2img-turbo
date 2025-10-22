@@ -23,6 +23,12 @@ from cleanfid.fid import get_folder_features, build_feature_extractor, fid_from_
 from pix2pix_turbo import Pix2Pix_Turbo
 from my_utils.training_utils import parse_args_paired_training, PairedDataset
 
+from torchvision.utils import save_image
+
+# ✅ define UNWARP here
+def unwarp(inverse_grid, feats):
+    unwarped_feats = F.grid_sample(feats, inverse_grid, align_corners=True)
+    return unwarped_feats
 
 def main(args):
     accelerator = Accelerator(
@@ -172,7 +178,18 @@ def main(args):
                 x_tgt = batch["output_pixel_values"]
                 B, C, H, W = x_src.shape
                 # forward pass
-                x_tgt_pred = net_pix2pix(x_src, prompt_tokens=batch["input_ids"], deterministic=True)
+                x_tgt_pred = net_pix2pix(x_src, prompt_tokens=batch["input_ids"], deterministic=True) # [1, 3, 784, 784]
+
+
+                # ✅ UNWARP here (if .inv.pth exists)
+                inv_path = batch["inv_grid_path"][0]
+                has_inv = batch["has_inv_grid"][0]
+
+                if has_inv:
+                    inv_grid = torch.load(inv_path).to(x_tgt_pred.device) # [1, 784, 784, 2]
+                    x_tgt_pred = unwarp(inv_grid, x_tgt_pred) # [1, 3, 784, 784]
+
+
                 # Reconstruction loss
                 loss_l2 = F.mse_loss(x_tgt_pred.float(), x_tgt.float(), reduction="mean") * args.lambda_l2
                 loss_lpips = net_lpips(x_tgt_pred.float(), x_tgt.float()).mean() * args.lambda_lpips
@@ -196,6 +213,14 @@ def main(args):
                 Generator loss: fool the discriminator
                 """
                 x_tgt_pred = net_pix2pix(x_src, prompt_tokens=batch["input_ids"], deterministic=True)
+
+
+                # ✅ UNWARP here also
+                if has_inv:
+                    inv_grid = torch.load(inv_path).to(x_tgt_pred.device)
+                    x_tgt_pred = unwarp(inv_grid, x_tgt_pred)
+
+
                 lossG = net_disc(x_tgt_pred, for_G=True).mean() * args.lambda_gan
                 accelerator.backward(lossG)
                 if accelerator.sync_gradients:

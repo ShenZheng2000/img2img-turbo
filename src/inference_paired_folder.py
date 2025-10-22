@@ -7,6 +7,8 @@ from torchvision import transforms
 import torchvision.transforms.functional as F
 from pix2pix_turbo import Pix2Pix_Turbo
 from image_prep import canny_from_pil
+from tqdm import tqdm
+from train_pix2pix_turbo import unwarp
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -37,7 +39,7 @@ if __name__ == "__main__":
         if f.lower().endswith(('.png', '.jpg', '.jpeg'))
     ])
 
-    for fname in img_list:
+    for fname in tqdm(img_list, desc="Generating images"):
         input_path = os.path.join(args.input_dir, fname)
         input_image = Image.open(input_path).convert('RGB')
         new_width = input_image.width - input_image.width % 8
@@ -70,6 +72,18 @@ if __name__ == "__main__":
                 if args.use_fp16:
                     c_t = c_t.half()
                 output_image = model(c_t, args.prompt)
+
+
+            # ✅ UNWARP if inverse grid exists
+            base = os.path.splitext(fname)[0]
+            inv_grid_path = os.path.join(args.input_dir, f"{base}.inv.pth")
+            if os.path.exists(inv_grid_path):
+                try:
+                    inv_grid = torch.load(inv_grid_path).to(output_image.device)
+                    output_image = unwarp(inv_grid, output_image)
+                except Exception:
+                    pass
+
 
             output_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
             output_pil.save(os.path.join(args.output_dir, fname))

@@ -308,6 +308,13 @@ class PairedDataset(torch.utils.data.Dataset):
         output_img = Image.open(os.path.join(self.output_folder, img_name))
         caption = self.captions[img_name]
 
+
+        # ✅ detect inverse grid if available
+        inv_grid_path = os.path.join(self.input_folder, img_name.replace(".png", ".inv.pth"))
+        has_inv_grid = os.path.exists(inv_grid_path)
+        if not has_inv_grid:
+            inv_grid_path = ""
+
         # input images scaled to 0,1
         img_t = self.T(input_img)
         img_t = F.to_tensor(img_t)
@@ -326,6 +333,8 @@ class PairedDataset(torch.utils.data.Dataset):
             "conditioning_pixel_values": img_t,
             "caption": caption,
             "input_ids": input_ids,
+            "has_inv_grid": has_inv_grid,   # ✅ <--- include the flag
+            "inv_grid_path": inv_grid_path,        # ✅ <-- new entry
         }
 
 
