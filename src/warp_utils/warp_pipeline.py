@@ -37,11 +37,6 @@ def detect_face_bbox(image_pil, face_app=None):
     if len(faces) > 0:
         faces.sort(key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]), reverse=True)
         x1, y1, x2, y2 = map(int, faces[0].bbox)
-        # TODO: think if we need to clamp here
-        x1 = max(0, min(x1, w - 1))
-        y1 = max(0, min(y1, h - 1))
-        x2 = max(0, min(x2, w - 1))
-        y2 = max(0, min(y2, h - 1))
     else:
         x1, y1, x2, y2 = 0, 0, w, h  # fallback: full image
 
@@ -83,37 +78,3 @@ def apply_unwarp(warp_grid, warped_output):
     inv_grid = invert_grid(warp_grid.to(device), (1, 3, H, W), separable=True)
     restored = F.grid_sample(warped_output, inv_grid.to(device), align_corners=True)
     return restored
-
-
-# NOTE: use for training only
-# NOTE: these are not working, skip for now. 
-# # ===============================================================
-# def warp_batch(x_src, face_app, bw):
-#     """Apply forward warp to a batch of source images."""
-#     if bw <= 0:
-#         return x_src, [None] * x_src.size(0)
-
-#     warped_list, warp_grid_list = [], []
-#     B = x_src.size(0)
-#     for b in range(B):
-#         img_pil = transforms.ToPILImage()(x_src[b].cpu() * 0.5 + 0.5)
-#         bbox = detect_face_bbox(img_pil, face_app)
-#         warped, warp_grid = apply_forward_warp(x_src[b:b+1], bbox.to(x_src.device), bw)
-#         warped_list.append(warped)
-#         warp_grid_list.append(warp_grid)
-#     return torch.cat(warped_list, dim=0), warp_grid_list
-
-# # ===============================================================
-# def unwarp_batch(x_pred, warp_grid_list):
-#     """Unwarp model outputs using saved warp grids."""
-#     if not any(warp_grid_list):
-#         return x_pred
-#     unwarped_list = []
-#     B = x_pred.size(0)
-#     for b in range(B):
-#         if warp_grid_list[b] is not None:
-#             x_unw = apply_unwarp(warp_grid_list[b], x_pred[b:b+1])
-#         else:
-#             x_unw = x_pred[b:b+1]
-#         unwarped_list.append(x_unw)
-#     return torch.cat(unwarped_list, dim=0)

@@ -4,6 +4,9 @@
 # Auto-detects prompt and bandwidth from experiment name
 # ===============================================================
 
+# TODO: crop the foreground using body mask. 
+# TODO: run it N times with different seeds to see which one is really good. 
+
 run_inference() {
     EXP="$1"        # e.g. exp_10_16_warped_128/candlelight_1
     DATASET="$2"    # e.g. dataset_with_garment_bigface_100
@@ -21,6 +24,7 @@ run_inference() {
     # -------------------------------
     # Auto-detect lighting prompt
     # -------------------------------
+    # NOTE: hardcoded the prompt for now. 
     if [[ "$EXP" == *"candlelight_1"* ]]; then
         PROMPT="Relit with warm candlelight in a dimly lit indoor setting, casting soft, flickering shadows and enveloping the subject in golden-orange tones to create a cozy, nostalgic mood."
     elif [[ "$EXP" == *"noon_sunlight_1"* ]]; then
