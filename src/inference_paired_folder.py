@@ -1,5 +1,3 @@
-# TODO: make train code also this plugin-style for warp-unwarp
-
 import os
 import argparse
 import numpy as np
@@ -12,9 +10,11 @@ from tqdm import tqdm
 from pathlib import Path
 
 # ✅ New imports for face detection + warp
-from insightface.app import FaceAnalysis
-from warp_utils.warping_layers import PlainKDEGrid, warp, invert_grid
-from train_pix2pix_turbo import unwarp  # still used for final unwarp()
+# from warp_utils.warping_layers import PlainKDEGrid, warp, invert_grid
+# from train_pix2pix_turbo import unwarp  # still used for final unwarp()
+from warp_utils.warp_pipeline import detect_face_bbox, apply_forward_warp, apply_unwarp
+from warp_utils.warp_pipeline import get_face_app
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -44,8 +44,7 @@ if __name__ == "__main__":
         model.half()
 
     # ✅ Initialize face detector once
-    face_app = FaceAnalysis(name='buffalo_l', providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
-    face_app.prepare(ctx_id=0)
+    face_app = get_face_app()
 
     # ==============================================================
     # ✅ AUTO-DETECT FOLDER STRUCTURE (SpreeAI-style)
@@ -89,47 +88,11 @@ if __name__ == "__main__":
 
             # --- FACE DETECT + FORWARD WARP ---
             if args.bw > 0:
-                img_cv2 = np.array(input_image)[:, :, ::-1]  # PIL -> BGR
-                faces = face_app.get(img_cv2)
-                height, width = input_image.height, input_image.width
-
-                if len(faces) > 0:
-                    # pick largest detected face
-                    faces.sort(key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]), reverse=True)
-                    x1, y1, x2, y2 = map(int, faces[0].bbox)
-                    # ✅ Clamp to valid image bounds (TODO: debug this one )
-                    x1 = max(0, min(x1, width - 1))
-                    y1 = max(0, min(y1, height - 1))
-                    x2 = max(0, min(x2, width - 1))
-                    y2 = max(0, min(y2, height - 1))
-                else:
-                    # fallback: whole image
-                    x1, y1, x2, y2 = 0, 0, width, height
-
-                print(f"[DEBUG] {input_path.name}: Detected face bbox = ({x1}, {y1}, {x2}, {y2})")
-
-                bboxes = torch.tensor([[x1, y1, x2, y2]], dtype=torch.float32).unsqueeze(0).to(c_t.device)
-
-                grid_net = PlainKDEGrid(
-                    input_shape=(height, width),
-                    output_shape=(height, width),
-                    separable=True,
-                    bandwidth_scale=args.bw,
-                    amplitude_scale=1.0,
-                ).to(c_t.device)
-
-                warp_grid = grid_net(c_t, gt_bboxes=bboxes)
-                c_t = warp(warp_grid, c_t)  # forward warp
-
-                # --- Run model in warped space ---
-                output_image = model(c_t, args.prompt)
-
-                # --- UNWARP back to original geometry ---
-                inv_grid = invert_grid(warp_grid, (1, 3, height, width), separable=True)
-                output_image = unwarp(inv_grid, output_image)
-
+                bbox = detect_face_bbox(input_image, face_app)
+                warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw)
+                output_image = model(warped, args.prompt)
+                output_image = apply_unwarp(warp_grid, output_image)
             else:
-                # no warp
                 output_image = model(c_t, args.prompt)
 
             # ==================== SAVE ====================
