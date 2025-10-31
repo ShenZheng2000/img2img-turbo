@@ -12,21 +12,31 @@ run_inference() {
         exit 1
     fi
 
-    OUT_DIR="/ssd1/shenzhen/img2img-turbo/output/pix2pix_turbo/${EXP}/result_A"
+    OUT_DIR="output/pix2pix_turbo/${EXP}/result_A"
 
-    # NOTE: use model_19001.pkl (or 18501.pkl) for inferencec 
+    # # NOTE: use model_19001.pkl (or 18501.pkl) for inferencec 
     python src/inference_paired_folder.py \
-        --model_path "/ssd1/shenzhen/img2img-turbo/output/pix2pix_turbo/${EXP}/checkpoints/model_18501.pkl" \
-        --input_dir "/ssd1/shenzhen/relighting/${DATASET_NAME}/test_A" \
+        --model_path "output/pix2pix_turbo/${EXP}/checkpoints/model_18501.pkl" \
+        --input_dir "/data3/shenzhen/Datasets/relighting/${DATASET_NAME}/test_A" \
         --prompt "$PROMPT" \
         --output_dir "$OUT_DIR"
 
     echo "Evaluating LPIPS / SSIM / PSNR ..."
     python eval_relight_metrics.py \
-        --gt_dir  "/ssd1/shenzhen/relighting/${DATASET_NAME}/test_B" \
+        --gt_dir  "/data3/shenzhen/Datasets/relighting/${DATASET_NAME}/test_B" \
         --pred_dir "$OUT_DIR"
 }
 
+# TODO: inference on source REAL images.
+# run_inference "exp_10_16_warped_512/noon_sunlight_1"
+# run_inference "exp_10_16/noon_sunlight_1"
+
+# run_inference "exp_10_16_warped_192/candlelight_1"
+# run_inference "exp_10_16_warped_320/candlelight_1"
+# run_inference "exp_10_16_warped_384/candlelight_1"
+# run_inference "exp_10_16_warped_128/candlelight_1"
+# run_inference "exp_10_16_warped_256/candlelight_1"
 # run_inference "exp_10_16_warped_512/candlelight_1"
+# run_inference "exp_10_16/candlelight_1"
 # run_inference "exp_10_9_warped_512/candlelight_1"
-run_inference "exp_10_16/candlelight_1"
+# run_inference "exp_10_9/candlelight_1"

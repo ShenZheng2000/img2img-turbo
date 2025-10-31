@@ -1,4 +1,6 @@
 single_step_translation/
+.gradio/
+gradio_tmp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
