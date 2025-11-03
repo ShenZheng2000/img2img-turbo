@@ -8,6 +8,7 @@ import torchvision.transforms.functional as F
 from pix2pix_turbo import Pix2Pix_Turbo
 from tqdm import tqdm
 from pathlib import Path
+from PIL import ImageOps
 
 # ✅ New imports for face detection + warp
 # from warp_utils.warping_layers import PlainKDEGrid, warp, invert_grid
@@ -74,8 +75,25 @@ if __name__ == "__main__":
             output_path = Path(args.output_dir) / input_path.name
 
         # ==================== PREPROCESS ====================
-        input_image = Image.open(input_path).convert('RGB')
-        orig_size = input_image.size  # (W, H)
+        ### >>> MODIFIED: locate and crop using mask inside pre_processing/
+        mask_path = input_path.parent / "pre_processing" / "black_fg_mask_groundedsam2.png"
+
+        if mask_path.exists():
+            img = Image.open(input_path).convert("RGB")
+            mask = Image.open(mask_path).convert("L")
+            inverted_mask = ImageOps.invert(mask)
+            bbox = inverted_mask.getbbox()
+
+            if bbox is None:
+                bbox = (0, 0, img.width, img.height)
+
+            input_image = img.crop(bbox)
+            cropped_size = input_image.size
+        else:
+            print("WARNING: Mask not found, using full image.")
+            input_image = Image.open(input_path).convert("RGB")
+            cropped_size = input_image.size
+        ### <<< MODIFIED <<<
 
         # 🔧 Fixed resize for stable inference
         input_image = input_image.resize((args.target_size, args.target_size), Image.LANCZOS)
@@ -98,14 +116,30 @@ if __name__ == "__main__":
             # ==================== SAVE ====================
             output_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
 
-            # ✅ Resize back keeping aspect ratio, longest side = target_size
-            orig_w, orig_h = orig_size
-            aspect_ratio = orig_w / orig_h
+            ### >>> MODIFIED: resize with preserved aspect ratio (same as fg mask)
+            cw, ch = cropped_size
+            aspect_ratio = cw / ch
+
+            # keep the longest side as 784 (args.target_size)
             if aspect_ratio >= 1:
+                # landscape: width longer
                 new_w, new_h = args.target_size, int(args.target_size / aspect_ratio)
             else:
+                # portrait: height longer
                 new_w, new_h = int(args.target_size * aspect_ratio), args.target_size
+
+            # resize while preserving mask ratio (no stretching)
             output_pil = output_pil.resize((new_w, new_h), Image.LANCZOS)
+            ### <<< MODIFIED <<<
+
+            # # ✅ Resize back keeping aspect ratio, longest side = target_size
+            # orig_w, orig_h = orig_size
+            # aspect_ratio = orig_w / orig_h
+            # if aspect_ratio >= 1:
+            #     new_w, new_h = args.target_size, int(args.target_size / aspect_ratio)
+            # else:
+            #     new_w, new_h = int(args.target_size * aspect_ratio), args.target_size
+            # output_pil = output_pil.resize((new_w, new_h), Image.LANCZOS)
 
             # ✅ Always save output as PNG (lossless, better visualization)
             output_path = output_path.with_suffix('.png')

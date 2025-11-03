@@ -10,7 +10,7 @@ train_pix2pix() {
     DATASET_NAME=$1   # e.g. exp_10_16/candlelight_1; exp_10_16_warped/candlelight_1
     EXP="$DATASET_NAME"  # exactly the same
 
-    DATASET="/data3/shenzhen/Datasets/relighting/${DATASET_NAME}"
+    DATASET="/home/shenzhen/Datasets/relighting/${DATASET_NAME}"
     OUTPUT="output/pix2pix_turbo/${EXP}"
     PROJECT="${EXP//\//_}"  # for wandb
 
@@ -30,14 +30,14 @@ train_pix2pix() {
         --max_train_steps 20000
 }
 
-# TODO: decide best warpint parameter before this experiment
-train_pix2pix "exp_10_11_warped_512/candlelight_1"
+# DONE: let's continue experiments for noon_sunlight. 
+# train_pix2pix "exp_10_11_warped_128/candlelight_1"
+# train_pix2pix "exp_10_11_warped_512/candlelight_1"
 # train_pix2pix "exp_10_11/candlelight_1" 
 
 # DONE: noon_sunlight experiments (warped)
-# train_pix2pix "exp_10_16_warped_512/candlelight_1"
-
-# DONE: noon_sunlight experiments (baseline)
+# train_pix2pix "exp_10_16_warped_512/noon_sunlight_1"
+train_pix2pix "exp_10_16_warped_128/noon_sunlight_1"
 # train_pix2pix "exp_10_16/noon_sunlight_1"
 
 # DONE: bw of 192
