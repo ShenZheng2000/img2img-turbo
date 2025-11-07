@@ -34,11 +34,13 @@ train_pix2pix() {
 # train_pix2pix "exp_10_11_warped_128/candlelight_1"
 # train_pix2pix "exp_10_11_warped_512/candlelight_1"
 # train_pix2pix "exp_10_11/candlelight_1" 
+train_pix2pix "exp_10_16_warped_64/candlelight_1"
 
 # DONE: noon_sunlight experiments (warped)
 # train_pix2pix "exp_10_16_warped_512/noon_sunlight_1"
-train_pix2pix "exp_10_16_warped_128/noon_sunlight_1"
+# train_pix2pix "exp_10_16_warped_128/noon_sunlight_1" 
 # train_pix2pix "exp_10_16/noon_sunlight_1"
+# train_pix2pix "exp_10_16_warped_64/noon_sunlight_1"
 
 # DONE: bw of 192
 # train_pix2pix "exp_10_16_warped_192/candlelight_1"

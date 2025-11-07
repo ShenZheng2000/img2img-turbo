@@ -28,8 +28,8 @@ print(f"🔧 Using target_prefix={target_prefix}, relight_type={relight_type}, b
 # ============================================================
 # 2. Dataset paths
 # ============================================================
-input_root  = f"/data3/shenzhen/Datasets/relighting/{target_prefix}/{relight_type}"
-output_root = f"/data3/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}/{relight_type}"
+input_root  = f"/home/shenzhen/Datasets/relighting/{target_prefix}/{relight_type}"
+output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}/{relight_type}"
 
 subfolders_to_warp = ["train_A", "test_A"]
 subfolders_to_copy = ["train_B", "test_B"]

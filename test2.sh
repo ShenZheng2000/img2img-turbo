@@ -4,9 +4,6 @@
 # Auto-detects prompt and bandwidth from experiment name
 # ===============================================================
 
-# TODO: crop the foreground using body mask. 
-# TODO: run it N times with different seeds to see which one is really good. 
-
 run_inference() {
     EXP="$1"        # e.g. exp_10_16_warped_128/candlelight_1
     DATASET="$2"    # e.g. dataset_with_garment_bigface_100
@@ -48,7 +45,7 @@ run_inference() {
     # Run inference
     # -------------------------------
     echo "Launching inference on $EXP ..."
-    CUDA_VISIBLE_DEVICES=7 python src/inference_paired_folder.py \
+    python src/inference_paired_folder.py \
         --model_path "$MODEL_PATH" \
         --input_dir "$INPUT_DIR" \
         --prompt "$PROMPT" \
@@ -60,7 +57,6 @@ run_inference() {
 # Examples
 # ===============================================================
 
-# TODO: run it again with fg crop
 # run_inference "exp_10_11/candlelight_1" "dataset_with_garment_bigface_1000"
 # run_inference "exp_10_11_warped_128/candlelight_1" "dataset_with_garment_bigface_1000"
 # run_inference "exp_10_11_warped_512/candlelight_1" "dataset_with_garment_bigface_1000"
@@ -69,7 +65,7 @@ run_inference() {
 # run_inference "exp_10_16_warped_128/candlelight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_512/candlelight_1" "dataset_with_garment_bigface_100"
 
-# TODO: rerun these experiments
-run_inference "exp_10_16/noon_sunlight_1" "dataset_with_garment_bigface_100"
-# run_inference "exp_10_16_warped_128/noon_sunlight_1" "dataset_with_garment_bigface_100" # TODO: this need a trained model 
-run_inference "exp_10_16_warped_512/noon_sunlight_1" "dataset_with_garment_bigface_100"
+# run_inference "exp_10_16/noon_sunlight_1" "dataset_with_garment_bigface_100"
+run_inference "exp_10_16_warped_64/noon_sunlight_1" "dataset_with_garment_bigface_100"
+# run_inference "exp_10_16_warped_128/noon_sunlight_1" "dataset_with_garment_bigface_100"
+# run_inference "exp_10_16_warped_512/noon_sunlight_1" "dataset_with_garment_bigface_100"
