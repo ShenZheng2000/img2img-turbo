@@ -1,3 +1,4 @@
+from email import parser
 import os
 import argparse
 from pathlib import Path
@@ -24,6 +25,13 @@ def parse_args():
     parser.add_argument('--use_fp16', action='store_true')
     parser.add_argument('--target_size', type=int, default=784)
     parser.add_argument('--bw', type=int, default=0)
+    parser.add_argument(
+        "--no-separable",
+        action="store_false",
+        dest="separable",
+        help="Disable separable KDE grid (default: True)"
+    )
+    parser.set_defaults(separable=True)
     args = parser.parse_args()
 
     if args.model_name == '' != args.model_path == '':
@@ -95,7 +103,7 @@ def process_image(input_path, model, face_app, args):
     with torch.no_grad():
         if args.bw > 0:
             bbox = detect_face_bbox(img, face_app)
-            warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw)
+            warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
 
             # (1) save warped image
             # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
@@ -113,7 +121,7 @@ def process_image(input_path, model, face_app, args):
             warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
 
             # (4) unwarp back
-            output_image = apply_unwarp(warp_grid, output_image)
+            output_image = apply_unwarp(warp_grid, output_image, args.separable)
         else:
             output_image = model(c_t, args.prompt)
 

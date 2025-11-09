@@ -17,6 +17,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--target_prefix", type=str, required=True, help="e.g. exp_10_11")
 parser.add_argument("--relight_type", type=str, required=True, help="e.g. candlelight_1")
 parser.add_argument("--bw", type=int, default=512, help="bandwidth scale")
+parser.add_argument(
+    "--no-separable",
+    action="store_false",
+    dest="separable",
+    help="Disable separable KDE grid (default: True)"
+)
+parser.set_defaults(separable=True)
 args = parser.parse_args()
 
 target_prefix = args.target_prefix
@@ -29,7 +36,10 @@ print(f"🔧 Using target_prefix={target_prefix}, relight_type={relight_type}, b
 # 2. Dataset paths
 # ============================================================
 input_root  = f"/home/shenzhen/Datasets/relighting/{target_prefix}/{relight_type}"
-output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}/{relight_type}"
+
+# output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}/{relight_type}"
+mode_tag = "" if args.separable else "_nonsep"
+output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}{mode_tag}/{relight_type}"
 
 subfolders_to_warp = ["train_A", "test_A"]
 subfolders_to_copy = ["train_B", "test_B"]
@@ -52,11 +62,11 @@ def process_image(img_path, warped_dir):
 
     # --- FACE DETECT + FORWARD WARP ---
     bbox = detect_face_bbox(img_pil, face_app).to(device)
-    warped_img, warp_grid = apply_forward_warp(c_t, bbox, bandwidth_scale)
+    warped_img, warp_grid = apply_forward_warp(c_t, bbox, bandwidth_scale, separable=args.separable)
 
     # --- Compute inverse grid ---
     _, _, h, w = c_t.shape
-    inverse_grid = invert_grid(warp_grid, (1, 3, h, w), separable=True)
+    inverse_grid = invert_grid(warp_grid, (1, 3, h, w), separable=args.separable)
 
     # --- Save warped image + inverse grid ---
     base = os.path.splitext(os.path.basename(img_path))[0]

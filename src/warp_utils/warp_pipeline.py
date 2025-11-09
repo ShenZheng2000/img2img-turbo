@@ -46,7 +46,7 @@ def detect_face_bbox(image_pil, face_app=None):
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)
 # ===============================================================
-def apply_forward_warp(image_tensor, bbox_tensor, bw):
+def apply_forward_warp(image_tensor, bbox_tensor, bw, separable=True):
     """
     Applies KDE-based forward warp around bbox region.
     Returns (warped_tensor, warp_grid).
@@ -57,7 +57,7 @@ def apply_forward_warp(image_tensor, bbox_tensor, bw):
     grid_net = PlainKDEGrid(
         input_shape=(H, W),
         output_shape=(H, W),
-        separable=True,
+        separable=separable,
         bandwidth_scale=bw,
         amplitude_scale=1.0,
     ).to(device)
@@ -68,13 +68,13 @@ def apply_forward_warp(image_tensor, bbox_tensor, bw):
 # ===============================================================
 # ✅ Unwarp (returns restored tensor)
 # ===============================================================
-def apply_unwarp(warp_grid, warped_output):
+def apply_unwarp(warp_grid, warped_output, separable=True):
     """
     Applies inverse KDE grid to unwarp the warped output tensor.
     """
     device = warped_output.device  # make sure we stay on the same GPU
     _, _, H, W = warped_output.shape
 
-    inv_grid = invert_grid(warp_grid.to(device), (1, 3, H, W), separable=True)
+    inv_grid = invert_grid(warp_grid.to(device), (1, 3, H, W), separable=separable)
     restored = F.grid_sample(warped_output, inv_grid.to(device), align_corners=True)
     return restored

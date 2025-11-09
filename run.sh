@@ -8,11 +8,10 @@
 # NOTE: adjust config if needed: /home/shenzhen/.cache/huggingface/accelerate/default_config.yaml
 train_pix2pix() {
     DATASET_NAME=$1   # e.g. exp_10_16/candlelight_1; exp_10_16_warped/candlelight_1
-    EXP="$DATASET_NAME"  # exactly the same
 
     DATASET="/home/shenzhen/Datasets/relighting/${DATASET_NAME}"
-    OUTPUT="output/pix2pix_turbo/${EXP}"
-    PROJECT="${EXP//\//_}"  # for wandb
+    OUTPUT="output/pix2pix_turbo/${DATASET_NAME}"
+    PROJECT="${DATASET_NAME//\//_}"  # for wandb
 
     accelerate launch src/train_pix2pix_turbo.py \
         --pretrained_model_name_or_path="stabilityai/sd-turbo" \
