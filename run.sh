@@ -32,7 +32,7 @@ train_pix2pix() {
 # DONE: let's continue experiments for noon_sunlight. 
 # train_pix2pix "exp_10_16_warped_512/candlelight_1"
 # train_pix2pix "exp_10_16_warped_128/candlelight_1"
-# train_pix2pix "exp_10_16_warped_128_eyes/candlelight_1"
+train_pix2pix "exp_10_16_warped_128_eyes/candlelight_1"
 # train_pix2pix "exp_10_16_warped_64/candlelight_1"
 # train_pix2pix "exp_10_16/candlelight_1" 
 
@@ -40,6 +40,6 @@ train_pix2pix() {
 # DONE: noon_sunlight experiments (warped)
 # train_pix2pix "exp_10_16_warped_512/noon_sunlight_1"
 # train_pix2pix "exp_10_16_warped_128/noon_sunlight_1"
-train_pix2pix "exp_10_16_warped_128_eyes/noon_sunlight_1"
+# train_pix2pix "exp_10_16_warped_128_eyes/noon_sunlight_1"
 # train_pix2pix "exp_10_16_warped_64/noon_sunlight_1"
 # train_pix2pix "exp_10_16/noon_sunlight_1"

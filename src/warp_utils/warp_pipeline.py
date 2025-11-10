@@ -21,27 +21,6 @@ def get_face_app(local_rank=0):
     _face_app.prepare(ctx_id=local_rank)
     return _face_app
 
-
-# ===============================================================
-# ✅ Face detection (returns bbox tensor [1,4])
-# ===============================================================
-# def detect_face_bbox(image_pil, face_app=None):
-#     """
-#     Detects largest face in the image (PIL.Image) and returns bbox tensor [[x1,y1,x2,y2]].
-#     Falls back to full image if no face found.
-#     """
-#     img_cv2 = np.array(image_pil)[:, :, ::-1]  # PIL → BGR
-#     faces = face_app.get(img_cv2)
-#     h, w = image_pil.height, image_pil.width
-
-#     if len(faces) > 0:
-#         faces.sort(key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]), reverse=True)
-#         x1, y1, x2, y2 = map(int, faces[0].bbox)
-#     else:
-#         x1, y1, x2, y2 = 0, 0, w, h  # fallback: full image
-
-#     return torch.tensor([[x1, y1, x2, y2]], dtype=torch.float32)
-
 def detect_face_bbox(image_pil, face_app=None, include_eyes=False):
     """
     Detects the largest face in the image (PIL.Image).

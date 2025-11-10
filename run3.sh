@@ -20,7 +20,7 @@ train_cyclegan() {
         --report_to "wandb" \
         --train_img_prep "resize_286_randomcrop_256x256_hflip" \
         --val_img_prep "no_resize" \
-        --validation_steps 2500 \
+        --validation_steps 5000 \
         --max_train_steps 25000
 }
 

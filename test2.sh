@@ -70,9 +70,6 @@ run_inference() {
 # run_inference "exp_10_16_warped_512/candlelight_1" "dataset_with_garment_bigface_100"
 
 # run_inference "exp_10_16/noon_sunlight_1" "dataset_with_garment_bigface_100"
-# run_inference "exp_10_16_warped_64/noon_sunlight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_128/noon_sunlight_1" "dataset_with_garment_bigface_100"
+run_inference "exp_10_16_warped_128_eyes/noon_sunlight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_512/noon_sunlight_1" "dataset_with_garment_bigface_100"
-
-# NOTE: for quick debug now. 
-run_inference "exp_10_16_warped_128_debug_eyes/noon_sunlight_1" "dataset_with_garment_bigface_100"
