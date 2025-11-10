@@ -31,6 +31,11 @@ def parse_args():
         dest="separable",
         help="Disable separable KDE grid (default: True)"
     )
+    parser.add_argument(
+        "--include-eyes",
+        action="store_true",
+        help="If set, include left/right eye boxes in face detection"
+    )
     parser.set_defaults(separable=True)
     args = parser.parse_args()
 
@@ -102,7 +107,7 @@ def process_image(input_path, model, face_app, args):
     # --- warp / relight / unwarp pipeline ---
     with torch.no_grad():
         if args.bw > 0:
-            bbox = detect_face_bbox(img, face_app)
+            bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
             warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
 
             # (1) save warped image
@@ -137,7 +142,7 @@ def process_image(input_path, model, face_app, args):
 # ============================================================
 # Main
 # ============================================================
-if __name__ == "__main__":
+def main():
     args = parse_args()
 
     model = Pix2Pix_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
@@ -168,3 +173,7 @@ if __name__ == "__main__":
 
     for input_path in tqdm(img_list, desc="Processing"):
         process_image(input_path, model, face_app, args)
+
+
+if __name__ == "__main__":
+    main()

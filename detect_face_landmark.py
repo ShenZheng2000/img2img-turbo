@@ -3,7 +3,10 @@
 
 '''
 Example command lines:
-python detect_face_landmark.py --input /home/shenzhen/Datasets/dataset_with_garment_bigface_100/BADRHINO_MEN_T-SHIRTS_011/bdy_1.jpg --out face_landmark.png
+python detect_face_landmark.py --input /home/shenzhen/Datasets/dataset_with_garment_bigface_100/BADRHINO_MEN_T-SHIRTS_011/bdy_1.jpg --out face_landmark
+python detect_face_landmark.py --input /home/shenzhen/Datasets/dataset_with_garment_bigface_100/Andres-otalora_Women_Tops_028/bdy_1.jpg --out face_landmark
+python detect_face_landmark.py --input /home/shenzhen/Datasets/dataset_with_garment_bigface_100/BananaRepublic_R2_Men_Sweatshirts_Hoodies_Joggers_027/bdy_2.webp --out face_landmark
+python detect_face_landmark.py --input /home/shenzhen/Datasets/dataset_with_garment_bigface_100/bananarepublic_R2_woman_t-shirts_018/bdy_1.webp --out face_landmark
 '''
 
 import argparse, os, sys, glob
@@ -62,7 +65,7 @@ def draw_and_save(img_bgr, faces, out_path):
             # 🔵 draw simple blue boxes around eyes
             left_eye, right_eye = kps[0], kps[1]
             eye_w = int((x2 - x1) * 0.25)
-            eye_h = int((y2 - y1) * 0.20)
+            eye_h = int((y2 - y1) * 0.15) # NOTE: use 0.15 instead of 0.20 to avoid too large boxes
             for ex, ey in [left_eye, right_eye]:
                 ex1, ey1 = int(ex - eye_w / 2), int(ey - eye_h / 2)
                 ex2, ey2 = int(ex + eye_w / 2), int(ey + eye_h / 2)

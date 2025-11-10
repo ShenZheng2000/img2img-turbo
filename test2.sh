@@ -5,7 +5,7 @@
 # ===============================================================
 
 run_inference() {
-    EXP="$1"        # e.g. exp_10_16_warped_128/candlelight_1
+    EXP="$1"        # e.g. exp_10_16_warped_128_eyes/candlelight_1
     DATASET="$2"    # e.g. dataset_with_garment_bigface_100
 
     # -------------------------------
@@ -19,9 +19,17 @@ run_inference() {
     echo "Detected bandwidth = $BW"
 
     # -------------------------------
+    # Auto-detect include_eyes
+    # -------------------------------
+    EYE_FLAG=""
+    if [[ "$EXP" == *"_eyes"* ]]; then
+        EYE_FLAG="--include-eyes"
+        echo "Detected: include-eyes = True"
+    fi
+
+    # -------------------------------
     # Auto-detect lighting prompt
     # -------------------------------
-    # NOTE: hardcoded the prompt for now. 
     if [[ "$EXP" == *"candlelight_1"* ]]; then
         PROMPT="Relit with warm candlelight in a dimly lit indoor setting, casting soft, flickering shadows and enveloping the subject in golden-orange tones to create a cozy, nostalgic mood."
     elif [[ "$EXP" == *"noon_sunlight_1"* ]]; then
@@ -50,22 +58,21 @@ run_inference() {
         --input_dir "$INPUT_DIR" \
         --prompt "$PROMPT" \
         --output_dir "$OUT_DIR" \
-        --bw "$BW"
+        --bw "$BW" \
+        $EYE_FLAG
 }
-
 # ===============================================================
 # Examples
 # ===============================================================
-
-# run_inference "exp_10_11/candlelight_1" "dataset_with_garment_bigface_1000"
-# run_inference "exp_10_11_warped_128/candlelight_1" "dataset_with_garment_bigface_1000"
-# run_inference "exp_10_11_warped_512/candlelight_1" "dataset_with_garment_bigface_1000"
 
 # run_inference "exp_10_16/candlelight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_128/candlelight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_512/candlelight_1" "dataset_with_garment_bigface_100"
 
 # run_inference "exp_10_16/noon_sunlight_1" "dataset_with_garment_bigface_100"
-run_inference "exp_10_16_warped_64/noon_sunlight_1" "dataset_with_garment_bigface_100"
+# run_inference "exp_10_16_warped_64/noon_sunlight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_128/noon_sunlight_1" "dataset_with_garment_bigface_100"
 # run_inference "exp_10_16_warped_512/noon_sunlight_1" "dataset_with_garment_bigface_100"
+
+# NOTE: for quick debug now. 
+run_inference "exp_10_16_warped_128_debug_eyes/noon_sunlight_1" "dataset_with_garment_bigface_100"

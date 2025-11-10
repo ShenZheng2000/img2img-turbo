@@ -21,6 +21,10 @@ from cyclegan_turbo import CycleGAN_Turbo, VAE_encode, VAE_decode, initialize_un
 from my_utils.training_utils import UnpairedDataset, build_transform, parse_args_unpaired_training
 from my_utils.dino_struct import DinoStructureLoss
 
+# NOTE: add this to avoid NCCL timeout
+import datetime
+torch.distributed.init_process_group(backend="nccl", timeout=datetime.timedelta(seconds=3600))
+
 
 def main(args):
     accelerator = Accelerator(gradient_accumulation_steps=args.gradient_accumulation_steps, log_with=args.report_to)

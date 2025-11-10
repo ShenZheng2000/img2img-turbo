@@ -23,6 +23,11 @@ parser.add_argument(
     dest="separable",
     help="Disable separable KDE grid (default: True)"
 )
+parser.add_argument(
+    "--include-eyes",
+    action="store_true",
+    help="If set, include left/right eye boxes in face detection"
+)
 parser.set_defaults(separable=True)
 args = parser.parse_args()
 
@@ -39,7 +44,8 @@ input_root  = f"/home/shenzhen/Datasets/relighting/{target_prefix}/{relight_type
 
 # output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}/{relight_type}"
 mode_tag = "" if args.separable else "_nonsep"
-output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}{mode_tag}/{relight_type}"
+eye_tag = "_eyes" if args.include_eyes else ""
+output_root = f"/home/shenzhen/Datasets/relighting/{target_prefix}_warped_{bandwidth_scale}{eye_tag}{mode_tag}/{relight_type}"
 
 subfolders_to_warp = ["train_A", "test_A"]
 subfolders_to_copy = ["train_B", "test_B"]
@@ -61,7 +67,7 @@ def process_image(img_path, warped_dir):
     c_t = load_img_warp(img_path).to(device)
 
     # --- FACE DETECT + FORWARD WARP ---
-    bbox = detect_face_bbox(img_pil, face_app).to(device)
+    bbox = detect_face_bbox(img_pil, face_app, include_eyes=args.include_eyes).to(device)
     warped_img, warp_grid = apply_forward_warp(c_t, bbox, bandwidth_scale, separable=args.separable)
 
     # --- Compute inverse grid ---
