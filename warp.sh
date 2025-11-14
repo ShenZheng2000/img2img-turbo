@@ -5,13 +5,8 @@ python warp_dataset.py \
     --bw 128 \
     --include-eyes
 
-# TODO: check if curretn change will break face detector logic! 
-# TODO: later training should be able to handle inv.pth in both folders
-# TODO: think about if resize-crop will screw up the warped images. 
-# TODO: change inference (unpaired) later; 
-
-# Example usage with input_root (different), warp-subfolders (all), and bbox-json (gt)
-# CUDA_VISIBLE_DEVICES=7 python warp_dataset.py \
+# # Example usage with input_root (different), warp-subfolders (all), and bbox-json (gt)
+# python warp_dataset.py \
 #   --target_prefix bdd100k_7_19_night \
 #   --bw 128 \
 #   --input_root /home/shenzhen/Datasets/BDD100K \

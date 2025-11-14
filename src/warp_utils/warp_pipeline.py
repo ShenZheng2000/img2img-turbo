@@ -11,6 +11,9 @@ from .warping_layers import PlainKDEGrid, warp, invert_grid
 from insightface.app import FaceAnalysis
 from torchvision import transforms
 import torch.nn.functional as F
+import os
+import json
+from PIL import Image, ImageOps
 
 # ===============================================================
 # ✅ Initialize face detector once
@@ -48,7 +51,6 @@ def detect_face_bbox(image_pil, face_app=None, include_eyes=False):
     # if no eyes or not requested → just return face
     return torch.tensor([[x1, y1, x2, y2]], dtype=torch.float32)
 
-
 def _compute_eye_boxes(face, x1, y1, x2, y2):
     """Compute left/right eye boxes from 5-point keypoints."""
     kps = face.kps.astype(int)
@@ -62,6 +64,125 @@ def _compute_eye_boxes(face, x1, y1, x2, y2):
     rx2, ry2 = int(right_eye[0] + eye_w / 2), int(right_eye[1] + eye_h / 2)
 
     return [lx1, ly1, lx2, ly2], [rx1, ry1, rx2, ry2]
+
+
+def get_gt_bbox(base_name, img_pil, bbox_map, device="cuda"):
+    """
+    Given:
+        base_name : image filename (e.g. 0001.jpg)
+        img_pil   : PIL image
+        bbox_map  : dict { filename: [ [x,y,w,h], ... ] }
+        device    : torch device for tensor output
+
+    Returns:
+        bbox tensor of shape [N, 4] with (x1, y1, x2, y2)
+        or full-image box if missing.
+    """
+    if bbox_map is None:
+        # fallback: full image
+        w_img, h_img = img_pil.size
+        return torch.tensor([[0., 0., float(w_img), float(h_img)]], device=device)
+
+    if base_name not in bbox_map:
+        # fallback: full image
+        w_img, h_img = img_pil.size
+        return torch.tensor([[0., 0., float(w_img), float(h_img)]], device=device)
+
+    valid = []
+    for (x, y, w, h) in bbox_map[base_name]:
+        if w <= 1 or h <= 1 or any(v != v for v in (x, y, w, h)):
+            continue
+        valid.append([x, y, x + w, y + h])
+
+    if not valid:
+        # no valid GT → fallback to full image
+        w_img, h_img = img_pil.size
+        return torch.tensor([[0., 0., float(w_img), float(h_img)]], device=device)
+
+    return torch.tensor(valid, device=device)
+
+
+def visualize_bbox(img_pil, bbox_tensor, base_name, save_dir):
+    """
+    Draw green rectangle(s) on the image for debugging.
+
+    Args:
+        img_pil      : input PIL image
+        bbox_tensor  : [N, 4] torch tensor
+        base_name    : file name for output
+        save_dir     : directory where the bbox visualization is saved
+    """
+    try:
+        import cv2
+        import numpy as np
+        os.makedirs(save_dir, exist_ok=True)
+
+        img_cv = np.array(img_pil)[:, :, ::-1].copy()   # PIL RGB → OpenCV BGR
+        for box in bbox_tensor:
+            x1, y1, x2, y2 = map(int, box.tolist())
+            cv2.rectangle(img_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        out_path = os.path.join(save_dir, base_name)
+        cv2.imwrite(out_path, img_cv)
+    except Exception as e:
+        print(f"[WARN] Failed to visualize bbox for {base_name}: {e}")
+
+
+def load_bbox_map(train_json, val_json):
+    """Load and merge COCO JSON bbox maps for train + val/test."""
+    def _load_one(path):
+        if not path or not os.path.exists(path):
+            return {}
+        with open(path, "r") as f:
+            coco = json.load(f)
+        id2name = {img["id"]: img["file_name"] for img in coco["images"]}
+        out = {}
+        for ann in coco["annotations"]:
+            fn = id2name[ann["image_id"]]
+            out.setdefault(fn, []).append(ann["bbox"])  # [x, y, w, h]
+        print(f"📘 Loaded {len(out)} bbox entries from {path}")
+        return out
+
+    merged = {}
+    for src in [train_json, val_json]:
+        part = _load_one(src)
+        merged.update(part)
+    print(f"✅ Total merged bbox entries: {len(merged)}")
+    return merged if merged else None
+
+
+def resize_longest_side(img_pil, cropped_size, target_size):
+    cw, ch = cropped_size
+    aspect_ratio = cw / ch
+    if aspect_ratio >= 1:
+        new_w, new_h = target_size, int(target_size / aspect_ratio)
+    else:
+        new_w, new_h = int(target_size * aspect_ratio), target_size
+    return img_pil.resize((new_w, new_h), Image.LANCZOS)
+
+
+def crop_to_foreground(input_path):
+    input_root = input_path.parent  # e.g. .../8seconds_men_shirts_034
+    mask_path = input_root / "pre_processing" / "black_fg_mask_groundedsam2.png"
+
+    # print(f"\n🟢 Image: {input_path}")
+    # print(f"🔍 Mask:  {mask_path}")
+
+    img = Image.open(input_path).convert("RGB")
+
+    if mask_path.exists():
+        mask = Image.open(mask_path).convert("L")
+        inverted_mask = ImageOps.invert(mask)
+        bbox = inverted_mask.getbbox()
+        if bbox:
+            img = img.crop(bbox)
+            # print(f"✅ Cropped to bbox {bbox}")
+        else:
+            print("⚠️ Empty mask, using full image.")
+    else:
+        print("⚠️ Mask not found, using full image.")
+
+    return img, img.size
 
 
 # ===============================================================

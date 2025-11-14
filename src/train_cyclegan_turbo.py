@@ -25,8 +25,12 @@ from my_utils.dino_struct import DinoStructureLoss
 import datetime
 torch.distributed.init_process_group(backend="nccl", timeout=datetime.timedelta(seconds=3600))
 
+from train_pix2pix_turbo import unwarp
+
 
 def main(args):
+    assert args.train_batch_size == 1, "Currently only batch size 1 is supported for training. Please set --train_batch_size=1"
+
     accelerator = Accelerator(gradient_accumulation_steps=args.gradient_accumulation_steps, log_with=args.report_to)
     set_seed(args.seed)
 
@@ -173,6 +177,14 @@ def main(args):
                 img_a = batch["pixel_values_src"].to(dtype=weight_dtype)
                 img_b = batch["pixel_values_tgt"].to(dtype=weight_dtype)
 
+
+                # ✅ Load inverse grid paths and flags (added)
+                has_inv_grid_src = batch["has_inv_grid_src"][0]
+                inv_grid_src = batch["inv_grid_src"][0]
+                has_inv_grid_tgt = batch["has_inv_grid_tgt"][0]
+                inv_grid_tgt = batch["inv_grid_tgt"][0]
+
+
                 bsz = img_a.shape[0]
                 fixed_a2b_emb = fixed_a2b_emb_base.repeat(bsz, 1, 1).to(dtype=weight_dtype)
                 fixed_b2a_emb = fixed_b2a_emb_base.repeat(bsz, 1, 1).to(dtype=weight_dtype)
@@ -184,11 +196,29 @@ def main(args):
                 # A -> fake B -> rec A
                 cyc_fake_b = CycleGAN_Turbo.forward_with_networks(img_a, "a2b", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_a2b_emb)
                 cyc_rec_a = CycleGAN_Turbo.forward_with_networks(cyc_fake_b, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
+
+
+                # ✅ Unwarp A-cycle reconstruction if available
+                if has_inv_grid_src:
+                    # print("DEBUG: inv_grid_src shape =", inv_grid_src.shape)
+                    # print("DEBUG: inv_grid_src min/max =", inv_grid_src.min().item(), inv_grid_src.max().item())
+                    cyc_rec_a = unwarp(inv_grid_src, cyc_rec_a)
+
+
                 loss_cycle_a = crit_cycle(cyc_rec_a, img_a) * args.lambda_cycle
                 loss_cycle_a += net_lpips(cyc_rec_a, img_a).mean() * args.lambda_cycle_lpips
                 # B -> fake A -> rec B
                 cyc_fake_a = CycleGAN_Turbo.forward_with_networks(img_b, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
                 cyc_rec_b = CycleGAN_Turbo.forward_with_networks(cyc_fake_a, "a2b", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_a2b_emb)
+
+
+                # ✅ Unwarp B-cycle reconstruction if available
+                if has_inv_grid_tgt:
+                    # print("DEBUG: inv_grid_tgt shape =", inv_grid_tgt.shape)
+                    # print("DEBUG: inv_grid_tgt min/max =", inv_grid_tgt.min().item(), inv_grid_tgt.max().item())
+                    cyc_rec_b = unwarp(inv_grid_tgt, cyc_rec_b)
+
+
                 loss_cycle_b = crit_cycle(cyc_rec_b, img_b) * args.lambda_cycle
                 loss_cycle_b += net_lpips(cyc_rec_b, img_b).mean() * args.lambda_cycle_lpips
                 accelerator.backward(loss_cycle_a + loss_cycle_b, retain_graph=False)
@@ -204,6 +234,14 @@ def main(args):
                 """
                 fake_a = CycleGAN_Turbo.forward_with_networks(img_b, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
                 fake_b = CycleGAN_Turbo.forward_with_networks(img_a, "a2b", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_a2b_emb)
+
+
+                # ✅ Unwarp before adversarial discriminator loss
+                if has_inv_grid_tgt:
+                    fake_a = unwarp(inv_grid_tgt, fake_a)
+                if has_inv_grid_src:
+                    fake_b = unwarp(inv_grid_src, fake_b)
+
                 loss_gan_a = net_disc_a(fake_b, for_G=True).mean() * args.lambda_gan
                 loss_gan_b = net_disc_b(fake_a, for_G=True).mean() * args.lambda_gan
                 accelerator.backward(loss_gan_a + loss_gan_b, retain_graph=False)
@@ -218,9 +256,18 @@ def main(args):
                 Identity Objective
                 """
                 idt_a = CycleGAN_Turbo.forward_with_networks(img_b, "a2b", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_a2b_emb)
+                idt_b = CycleGAN_Turbo.forward_with_networks(img_a, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
+
+
+                # ✅ Unwarp identity outputs before computing loss
+                if has_inv_grid_tgt:  # img_b corresponds to domain B (tgt)
+                    idt_a = unwarp(inv_grid_tgt, idt_a)
+                if has_inv_grid_src:  # img_a corresponds to domain A (src)
+                    idt_b = unwarp(inv_grid_src, idt_b)
+                    
+
                 loss_idt_a = crit_idt(idt_a, img_b) * args.lambda_idt
                 loss_idt_a += net_lpips(idt_a, img_b).mean() * args.lambda_idt_lpips
-                idt_b = CycleGAN_Turbo.forward_with_networks(img_a, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
                 loss_idt_b = crit_idt(idt_b, img_a) * args.lambda_idt
                 loss_idt_b += net_lpips(idt_b, img_a).mean() * args.lambda_idt_lpips
                 loss_g_idt = loss_idt_a + loss_idt_b
@@ -313,7 +360,8 @@ def main(args):
                         torch.cuda.empty_cache()
 
                     # compute val FID and DINO-Struct scores
-                    if global_step % args.validation_steps == 1:
+                    # if global_step % args.validation_steps == 1:
+                    if (global_step > 0 and global_step % args.validation_steps == 0):
                         _timesteps = torch.tensor([noise_scheduler_1step.config.num_train_timesteps - 1] * 1, device="cuda").long()
                         net_dino = DinoStructureLoss()
                         """

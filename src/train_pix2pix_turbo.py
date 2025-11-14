@@ -23,14 +23,16 @@ from cleanfid.fid import get_folder_features, build_feature_extractor, fid_from_
 from pix2pix_turbo import Pix2Pix_Turbo
 from my_utils.training_utils import parse_args_paired_training, PairedDataset
 
-from torchvision.utils import save_image
 
 # ✅ define UNWARP here
 def unwarp(inverse_grid, feats):
+    inverse_grid = inverse_grid.to(device=feats.device)
     unwarped_feats = F.grid_sample(feats, inverse_grid, align_corners=True)
     return unwarped_feats
 
 def main(args):
+    assert args.train_batch_size == 1, "Currently only batch size 1 is supported for training. Please set --train_batch_size=1"
+
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         mixed_precision=args.mixed_precision,
@@ -182,11 +184,12 @@ def main(args):
 
 
                 # ✅ UNWARP here (if .inv.pth exists)
-                inv_path = batch["inv_grid_path"][0]
+                # inv_path = batch["inv_grid_path"][0]
+                inv_grid = batch["inv_grid"][0]
                 has_inv = batch["has_inv_grid"][0]
 
                 if has_inv:
-                    inv_grid = torch.load(inv_path).to(x_tgt_pred.device) # [1, 784, 784, 2]
+                    # inv_grid = torch.load(inv_path).to(x_tgt_pred.device) # [1, 784, 784, 2]
                     x_tgt_pred = unwarp(inv_grid, x_tgt_pred) # [1, 3, 784, 784]
 
 
@@ -217,7 +220,7 @@ def main(args):
 
                 # ✅ UNWARP here also
                 if has_inv:
-                    inv_grid = torch.load(inv_path).to(x_tgt_pred.device)
+                    # inv_grid = torch.load(inv_path).to(x_tgt_pred.device)
                     x_tgt_pred = unwarp(inv_grid, x_tgt_pred)
 
 

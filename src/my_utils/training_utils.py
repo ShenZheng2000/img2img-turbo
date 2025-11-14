@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 from torchvision import transforms
 import torchvision.transforms.functional as F
+from torch.nn.functional import interpolate
 from glob import glob
 
 
@@ -181,59 +182,180 @@ def parse_args_unpaired_training():
     return args
 
 
-def build_transform(image_prep):
-    """
-    Constructs a transformation pipeline based on the specified image preparation method.
+# def build_transform(image_prep):
+#     """
+#     Constructs a transformation pipeline based on the specified image preparation method.
 
-    Parameters:
-    - image_prep (str): A string describing the desired image preparation
+#     Parameters:
+#     - image_prep (str): A string describing the desired image preparation
+
+#     Returns:
+#     - torchvision.transforms.Compose: A composable sequence of transformations to be applied to images.
+#     """
+#     if image_prep == "resized_crop_512":
+#         T = transforms.Compose([
+#             transforms.Resize(512, interpolation=transforms.InterpolationMode.LANCZOS),
+#             transforms.CenterCrop(512),
+#         ])
+#     elif image_prep == "resize_286_randomcrop_256x256_hflip":
+#         T = transforms.Compose([
+#             transforms.Resize((286, 286), interpolation=Image.LANCZOS),
+#             transforms.RandomCrop((256, 256)),
+#             transforms.RandomHorizontalFlip(),
+#         ])
+#     elif image_prep in ["resize_256", "resize_256x256"]:
+#         T = transforms.Compose([
+#             transforms.Resize((256, 256), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep in ["resize_512", "resize_512x512"]:
+#         T = transforms.Compose([
+#             transforms.Resize((512, 512), interpolation=Image.LANCZOS)
+#         ])
+#     # NOTE: add resize of 784 and 384 for the relight dataset
+#     elif image_prep in ["resize_784"]:
+#         T = transforms.Compose([
+#             transforms.Resize((784, 784), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep in ["resize_384"]:
+#         T = transforms.Compose([
+#             transforms.Resize((384, 384), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep in ["resize_416"]:
+#         T = transforms.Compose([
+#             transforms.Resize((416, 416), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep in ["resize_448"]:
+#         T = transforms.Compose([
+#             transforms.Resize((448, 448), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep in ["resize_480"]:
+#         T = transforms.Compose([
+#             transforms.Resize((480, 480), interpolation=Image.LANCZOS)
+#         ])
+#     elif image_prep == "no_resize":
+#         T = transforms.Lambda(lambda x: x)
+#     return T
+
+
+# ------------------------------------------------
+# 🔹 Helper functions for grids
+# ------------------------------------------------
+def _resize_grid(grid, size):
+    """
+    Resize flow/grid tensor to new size.
+
+    Accepts:
+      - [H, W, 2]
+      - [1, H, W, 2]
 
     Returns:
-    - torchvision.transforms.Compose: A composable sequence of transformations to be applied to images.
+      - [1, H_new, W_new, 2]
     """
-    if image_prep == "resized_crop_512":
-        T = transforms.Compose([
-            transforms.Resize(512, interpolation=transforms.InterpolationMode.LANCZOS),
-            transforms.CenterCrop(512),
-        ])
-    elif image_prep == "resize_286_randomcrop_256x256_hflip":
-        T = transforms.Compose([
-            transforms.Resize((286, 286), interpolation=Image.LANCZOS),
-            transforms.RandomCrop((256, 256)),
-            transforms.RandomHorizontalFlip(),
-        ])
+    # make sure we have a batch dim
+    if grid.dim() == 3:
+        grid = grid.unsqueeze(0)  # [1, H, W, 2]
+
+    # [1, H, W, 2] -> [1, 2, H, W]
+    grid = grid.permute(0, 3, 1, 2)
+
+    # resize
+    grid = interpolate(grid, size=size, mode="bilinear", align_corners=True)  # [1, 2, H', W']
+
+    # back to [1, H', W', 2]
+    grid = grid.permute(0, 2, 3, 1)
+    return grid
+
+
+def _crop_grid(grid, i, j, h, w):
+    """
+    Crop grid using same params as image crop.
+
+    Accepts [H, W, 2] or [1, H, W, 2].
+    Returns [1, h, w, 2].
+    """
+    if grid.dim() == 3:
+        grid = grid.unsqueeze(0)  # [1, H, W, 2]
+
+    grid = grid[:, i:i + h, j:j + w, :]
+    return grid
+
+
+def _flip_grid(grid):
+    """
+    Horizontal flip + negate x-coordinates.
+
+    Accepts [H, W, 2] or [1, H, W, 2].
+    Returns [1, H, W, 2].
+    """
+    if grid.dim() == 3:
+        grid = grid.unsqueeze(0)  # [1, H, W, 2]
+
+    # flip along width axis (dim=2)
+    grid = torch.flip(grid, dims=[2])
+    grid[..., 0] = -grid[..., 0]
+    return grid
+
+
+# ------------------------------------------------
+# 🔹 Unified Resize / Crop / Flip Transform
+# ------------------------------------------------
+def _transform_resize_crop_flip(inputs, resize_size, crop_size=None, hflip_prob=0.0):
+    """
+    Apply Resize (+ optional RandomCrop + optional RandomHorizontalFlip)
+    to both image and grid, keeping spatial consistency.
+    """
+    if isinstance(inputs, tuple):
+        img, grid = inputs
+    else:
+        img, grid = inputs, None
+
+    # ✅ Resize
+    img = F.resize(img, resize_size, interpolation=Image.LANCZOS)
+    if grid is not None:
+        grid = _resize_grid(grid, resize_size)
+
+    # ✅ Optional RandomCrop
+    if crop_size is not None:
+        i, j, h, w = transforms.RandomCrop.get_params(img, output_size=crop_size)
+        img = F.crop(img, i, j, h, w)
+        if grid is not None:
+            grid = _crop_grid(grid, i, j, h, w)
+
+    # ✅ Optional RandomHorizontalFlip
+    if hflip_prob > 0 and torch.rand(1) < hflip_prob:
+        img = F.hflip(img)
+        if grid is not None:
+            grid = _flip_grid(grid)
+
+    return (img, grid) if grid is not None else img
+
+
+
+# ------------------------------------------------
+# 🔹 Unified Transform (no nested function)
+# ------------------------------------------------
+def build_transform(image_prep):
+    """
+    Unified transform builder (auto grid support).
+    Returns a callable that applies the same operations to (img) or (img, grid).
+    """
+    if image_prep == "resize_286_randomcrop_256x256_hflip":
+        return lambda x: _transform_resize_crop_flip(
+            x, resize_size=(286, 286), crop_size=(256, 256), hflip_prob=0.5
+        )
+
     elif image_prep in ["resize_256", "resize_256x256"]:
-        T = transforms.Compose([
-            transforms.Resize((256, 256), interpolation=Image.LANCZOS)
-        ])
+        return lambda x: _transform_resize_crop_flip(x, resize_size=(256, 256))
+
     elif image_prep in ["resize_512", "resize_512x512"]:
-        T = transforms.Compose([
-            transforms.Resize((512, 512), interpolation=Image.LANCZOS)
-        ])
-    # NOTE: add resize of 784 and 384 for the relight dataset
-    elif image_prep in ["resize_784"]:
-        T = transforms.Compose([
-            transforms.Resize((784, 784), interpolation=Image.LANCZOS)
-        ])
-    elif image_prep in ["resize_384"]:
-        T = transforms.Compose([
-            transforms.Resize((384, 384), interpolation=Image.LANCZOS)
-        ])
-    elif image_prep in ["resize_416"]:
-        T = transforms.Compose([
-            transforms.Resize((416, 416), interpolation=Image.LANCZOS)
-        ])
-    elif image_prep in ["resize_448"]:
-        T = transforms.Compose([
-            transforms.Resize((448, 448), interpolation=Image.LANCZOS)
-        ])
-    elif image_prep in ["resize_480"]:
-        T = transforms.Compose([
-            transforms.Resize((480, 480), interpolation=Image.LANCZOS)
-        ])
+        return lambda x: _transform_resize_crop_flip(x, resize_size=(512, 512))
+
     elif image_prep == "no_resize":
-        T = transforms.Lambda(lambda x: x)
-    return T
+        return lambda x: x
+
+    else:
+        raise NotImplementedError(f"Unsupported image_prep: {image_prep}")
+
 
 
 class PairedDataset(torch.utils.data.Dataset):
@@ -310,14 +432,18 @@ class PairedDataset(torch.utils.data.Dataset):
 
 
         # ✅ detect inverse grid if available
-        inv_grid_path = os.path.join(self.input_folder, img_name.replace(".png", ".inv.pth"))
-        has_inv_grid = os.path.exists(inv_grid_path)
-        if not has_inv_grid:
-            inv_grid_path = ""
+        inv_grid_path = os.path.join(self.input_folder, img_name.replace(".png", ".inv.pth")).replace(".jpg", ".inv.pth")
+        inv_grid = torch.load(inv_grid_path, map_location="cpu") if os.path.exists(inv_grid_path) else None
 
-        # input images scaled to 0,1
-        img_t = self.T(input_img)
+        # ✅ input images scaled to 0,1
+        # img_t = self.T(input_img)
+        if inv_grid is not None:
+            img_t, inv_grid = self.T((input_img, inv_grid))
+        else:
+            img_t = self.T(input_img)
+
         img_t = F.to_tensor(img_t)
+
         # output images scaled to -1,1
         output_t = self.T(output_img)
         output_t = F.to_tensor(output_t)
@@ -333,8 +459,8 @@ class PairedDataset(torch.utils.data.Dataset):
             "conditioning_pixel_values": img_t,
             "caption": caption,
             "input_ids": input_ids,
-            "has_inv_grid": has_inv_grid,   # ✅ <--- include the flag
-            "inv_grid_path": inv_grid_path,        # ✅ <-- new entry
+            "has_inv_grid": inv_grid is not None,
+            "inv_grid": inv_grid,
         }
 
 
@@ -423,10 +549,32 @@ class UnpairedDataset(torch.utils.data.Dataset):
         else:
             img_path_src = random.choice(self.l_imgs_src)
         img_path_tgt = random.choice(self.l_imgs_tgt)
+
+        # detect + load inverse grids
+        inv_grid_path_src = img_path_src.replace(".png", ".inv.pth").replace(".jpg", ".inv.pth")
+        inv_grid_src = torch.load(inv_grid_path_src, map_location="cpu") if os.path.exists(inv_grid_path_src) else None
+        inv_grid_path_tgt = img_path_tgt.replace(".png", ".inv.pth").replace(".jpg", ".inv.pth")
+        inv_grid_tgt = torch.load(inv_grid_path_tgt, map_location="cpu") if os.path.exists(inv_grid_path_tgt) else None
+
         img_pil_src = Image.open(img_path_src).convert("RGB")
         img_pil_tgt = Image.open(img_path_tgt).convert("RGB")
-        img_t_src = F.to_tensor(self.T(img_pil_src))
-        img_t_tgt = F.to_tensor(self.T(img_pil_tgt))
+
+        # img_t_src = F.to_tensor(self.T(img_pil_src))
+        # img_t_tgt = F.to_tensor(self.T(img_pil_tgt))
+        # ✅ apply unified transform (auto-handles grid if needed)
+        if inv_grid_src is not None:
+            img_pil_src, inv_grid_src = self.T((img_pil_src, inv_grid_src))
+        else:
+            img_pil_src = self.T(img_pil_src)
+
+        if inv_grid_tgt is not None:
+            img_pil_tgt, inv_grid_tgt = self.T((img_pil_tgt, inv_grid_tgt))
+        else:
+            img_pil_tgt = self.T(img_pil_tgt)
+
+        img_t_src = F.to_tensor(img_pil_src)
+        img_t_tgt = F.to_tensor(img_pil_tgt)
+
         img_t_src = F.normalize(img_t_src, mean=[0.5], std=[0.5])
         img_t_tgt = F.normalize(img_t_tgt, mean=[0.5], std=[0.5])
         return {
@@ -436,4 +584,8 @@ class UnpairedDataset(torch.utils.data.Dataset):
             "caption_tgt": self.fixed_caption_tgt,
             "input_ids_src": self.input_ids_src,
             "input_ids_tgt": self.input_ids_tgt,
+            "has_inv_grid_src": inv_grid_src is not None,      
+            "inv_grid_src": inv_grid_src,  
+            "has_inv_grid_tgt": inv_grid_tgt is not None,       
+            "inv_grid_tgt": inv_grid_tgt,                 
         }

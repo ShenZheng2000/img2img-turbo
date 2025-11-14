@@ -9,7 +9,7 @@ import torchvision.transforms.functional as F
 from tqdm import tqdm
 
 from pix2pix_turbo import Pix2Pix_Turbo
-from warp_utils.warp_pipeline import detect_face_bbox, apply_forward_warp, apply_unwarp, get_face_app
+from warp_utils.warp_pipeline import detect_face_bbox, apply_forward_warp, apply_unwarp, get_face_app, resize_longest_side, crop_to_foreground
 
 
 # ============================================================
@@ -46,45 +46,6 @@ def parse_args():
     return args
 
 
-# ============================================================
-# Helper: resize keeping aspect ratio
-# ============================================================
-def resize_longest_side(img_pil, cropped_size, target_size):
-    cw, ch = cropped_size
-    aspect_ratio = cw / ch
-    if aspect_ratio >= 1:
-        new_w, new_h = target_size, int(target_size / aspect_ratio)
-    else:
-        new_w, new_h = int(target_size * aspect_ratio), target_size
-    return img_pil.resize((new_w, new_h), Image.LANCZOS)
-
-
-# ============================================================
-# Helper: crop using mask directly under input_dir/pre_processing/
-# ============================================================
-def crop_to_foreground(input_path):
-    input_root = input_path.parent  # e.g. .../8seconds_men_shirts_034
-    mask_path = input_root / "pre_processing" / "black_fg_mask_groundedsam2.png"
-
-    # print(f"\n🟢 Image: {input_path}")
-    # print(f"🔍 Mask:  {mask_path}")
-
-    img = Image.open(input_path).convert("RGB")
-
-    if mask_path.exists():
-        mask = Image.open(mask_path).convert("L")
-        inverted_mask = ImageOps.invert(mask)
-        bbox = inverted_mask.getbbox()
-        if bbox:
-            img = img.crop(bbox)
-            # print(f"✅ Cropped to bbox {bbox}")
-        else:
-            print("⚠️ Empty mask, using full image.")
-    else:
-        print("⚠️ Mask not found, using full image.")
-
-    return img, img.size
-
 
 # ============================================================
 # Main processing for one image
@@ -107,6 +68,8 @@ def process_image(input_path, model, face_app, args):
     # --- warp / relight / unwarp pipeline ---
     with torch.no_grad():
         if args.bw > 0:
+
+            # (0) get bbox and apply forward warp
             bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
             warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
 

@@ -6,6 +6,7 @@
 # NOTE: --max_train_steps is doubled (10k->20k) with fewer gpus (8->4)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # NOTE: hardcode DATASET_NAME and EXP to be the same. 
 # NOTE: adjust config if needed: /home/shenzhen/.cache/huggingface/accelerate/default_config.yaml
+# NOTE: --resolution here only for clean-fid calculation, not for training 
 train_pix2pix() {
     DATASET_NAME=$1   # e.g. exp_10_16/candlelight_1; exp_10_16_warped/candlelight_1
 
@@ -30,6 +31,7 @@ train_pix2pix() {
 }
 
 # DONE: let's continue experiments for noon_sunlight. 
+
 # train_pix2pix "exp_10_16_warped_512/candlelight_1"
 # train_pix2pix "exp_10_16_warped_128/candlelight_1"
 train_pix2pix "exp_10_16_warped_128_eyes/candlelight_1"

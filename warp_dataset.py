@@ -5,14 +5,10 @@ import torch
 import argparse
 from PIL import Image
 from tqdm import tqdm
-import json
-import cv2
-import numpy as np
 
 # ✅ warp utils
-from src.warp_utils.warp_pipeline import get_face_app, detect_face_bbox, apply_forward_warp
+from src.warp_utils.warp_pipeline import get_face_app, detect_face_bbox, get_gt_bbox, visualize_bbox, load_bbox_map, apply_forward_warp
 from src.warp_utils.warping_layers import invert_grid, save_img_warp, load_img_warp
-
 
 # ============================================================
 # 1. Parse Args
@@ -36,32 +32,7 @@ def parse_args():
 
 
 # ============================================================
-# 2. Load bbox map
-# ============================================================
-def load_bbox_map(train_json, val_json):
-    """Load and merge COCO JSON bbox maps for train + val/test."""
-    def _load_one(path):
-        if not path or not os.path.exists(path):
-            return {}
-        with open(path, "r") as f:
-            coco = json.load(f)
-        id2name = {img["id"]: img["file_name"] for img in coco["images"]}
-        out = {}
-        for ann in coco["annotations"]:
-            fn = id2name[ann["image_id"]]
-            out.setdefault(fn, []).append(ann["bbox"])  # [x, y, w, h]
-        print(f"📘 Loaded {len(out)} bbox entries from {path}")
-        return out
-
-    merged = {}
-    for src in [train_json, val_json]:
-        part = _load_one(src)
-        merged.update(part)
-    print(f"✅ Total merged bbox entries: {len(merged)}")
-    return merged if merged else None
-
-# ============================================================
-# 3. Main pipeline
+# 2. Main pipeline
 # ============================================================
 class WarpDatasetPipeline:
     def __init__(self, args):
@@ -99,43 +70,6 @@ class WarpDatasetPipeline:
         print(f"📂 output_root = {self.output_root}")
 
     # --------------------------------------------------------
-    def get_gt_bbox(self, base, img_pil):
-        """Return bbox tensor based on GT map, or full image if missing."""
-        if base in self.bbox_map:
-            valid = []
-            for (x, y, w, h) in self.bbox_map[base]:
-                if w <= 1 or h <= 1 or any(v != v for v in (x, y, w, h)):
-                    continue
-                valid.append([x, y, x + w, y + h])
-            if not valid:  # fallback: full image -> No effect on warping since the grid will be identity
-                w_img, h_img = img_pil.size
-                bbox = torch.tensor([[0.0, 0.0, float(w_img), float(h_img)]], device=self.device)
-            else:
-                bbox = torch.tensor(valid, device=self.device)
-        else:
-            # no GT at all → full image
-            w_img, h_img = img_pil.size
-            bbox = torch.tensor([[0.0, 0.0, float(w_img), float(h_img)]], device=self.device)
-        return bbox
-
-    # --------------------------------------------------------
-    def visualize_bbox(self, img_pil, bbox, base_name):
-        """Draw bbox rectangles and save for debugging."""
-        try:
-            debug_dir = os.path.join(self.output_root, "_debug_bbox")
-            os.makedirs(debug_dir, exist_ok=True)
-
-            img_cv = np.array(img_pil)[:, :, ::-1].copy()
-            for box in bbox:
-                x1, y1, x2, y2 = map(int, box.tolist())
-                cv2.rectangle(img_cv, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-            out_path = os.path.join(debug_dir, base_name)
-            cv2.imwrite(out_path, img_cv)
-        except Exception as e:
-            print(f"⚠️ bbox visualization failed for {base_name}: {e}")
-
-    # --------------------------------------------------------
     def process_image(self, img_path, warped_dir):
         img_pil = Image.open(img_path).convert("RGB")
         c_t = load_img_warp(img_path).to(self.device)
@@ -143,13 +77,16 @@ class WarpDatasetPipeline:
 
         # --- bbox source ---
         if self.bbox_map is not None:  # GT-only mode (no detector)
-            bbox = self.get_gt_bbox(base, img_pil)
+            # bbox = self.get_gt_bbox(base, img_pil)
+            bbox = get_gt_bbox(base, img_pil, self.bbox_map, device=self.device)
         else:
             # detector mode
             bbox = detect_face_bbox(img_pil, self.face_app, include_eyes=self.args.include_eyes).to(self.device)
 
         # --- visualize bbox ---
-        self.visualize_bbox(img_pil, bbox, base)
+        # self.visualize_bbox(img_pil, bbox, base)
+        debug_dir = os.path.join(self.output_root, "_debug_bbox")
+        visualize_bbox(img_pil, bbox, base, debug_dir)
 
         # --- warp images and compute inverse grid ---
         warped_img, warp_grid = apply_forward_warp(

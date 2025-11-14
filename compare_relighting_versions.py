@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
@@ -8,10 +7,10 @@ import argparse
 Example usage: 
 python compare_relighting_versions.py \
   --orig_dir /home/shenzhen/Datasets/dataset_with_garment_bigface_100 \
-  --no_warp_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16/noon_sunlight_1/result_A_dataset_with_garment_bigface_100 \
-  --warp_face_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16_warped_128/noon_sunlight_1/result_A_dataset_with_garment_bigface_100 \
-  --warp_eyes_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16_warped_128_eyes/noon_sunlight_1/result_A_dataset_with_garment_bigface_100 \
-  --output_dir /home/shenzhen/Relight_Projects/img2img-turbo/comparisons/exp_10_16/noon_sunlight_1
+  --no_warp_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16/candlelight_1/result_A_dataset_with_garment_bigface_100 \
+  --warp_face_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16_warped_128/candlelight_1/result_A_dataset_with_garment_bigface_100 \
+  --warp_eyes_dir /home/shenzhen/Relight_Projects/img2img-turbo/output/pix2pix_turbo/exp_10_16_warped_128_eyes/candlelight_1/result_A_dataset_with_garment_bigface_100 \
+  --output_dir /home/shenzhen/Relight_Projects/img2img-turbo/comparisons/exp_10_16/candlelight_1
 '''
 
 # ================================================
