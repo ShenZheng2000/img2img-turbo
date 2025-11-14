@@ -23,7 +23,9 @@ train_cyclegan() {
         --max_train_steps 25000
 }
 
+# TODO: maybe rerun these experiements with new dataloader
 # train_cyclegan "bdd100k_7_19_night" "resize_286_randomcrop_256x256_hflip"
-train_cyclegan "bdd100k_7_19_night_warped_128" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "bdd100k_7_19_night_warped_128" "resize_286_randomcrop_256x256_hflip"
 
-# TODO: how to unwarp correctly, with randomcrop and hflip? 
+train_cyclegan "bdd100k_1_20" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "bdd100k_1_20_warped_128" "resize_286_randomcrop_256x256_hflip"

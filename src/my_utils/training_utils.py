@@ -433,11 +433,15 @@ class PairedDataset(torch.utils.data.Dataset):
 
         # ✅ detect inverse grid if available
         inv_grid_path = os.path.join(self.input_folder, img_name.replace(".png", ".inv.pth")).replace(".jpg", ".inv.pth")
-        inv_grid = torch.load(inv_grid_path, map_location="cpu") if os.path.exists(inv_grid_path) else None
+        inv_grid = (
+            torch.load(inv_grid_path, map_location="cpu")
+            if os.path.exists(inv_grid_path)
+            else torch.empty(0)
+        )
 
         # ✅ input images scaled to 0,1
         # img_t = self.T(input_img)
-        if inv_grid is not None:
+        if inv_grid.numel() > 0:
             img_t, inv_grid = self.T((input_img, inv_grid))
         else:
             img_t = self.T(input_img)
@@ -459,7 +463,7 @@ class PairedDataset(torch.utils.data.Dataset):
             "conditioning_pixel_values": img_t,
             "caption": caption,
             "input_ids": input_ids,
-            "has_inv_grid": inv_grid is not None,
+            "has_inv_grid": inv_grid.numel() > 0,
             "inv_grid": inv_grid,
         }
 
@@ -552,9 +556,17 @@ class UnpairedDataset(torch.utils.data.Dataset):
 
         # detect + load inverse grids
         inv_grid_path_src = img_path_src.replace(".png", ".inv.pth").replace(".jpg", ".inv.pth")
-        inv_grid_src = torch.load(inv_grid_path_src, map_location="cpu") if os.path.exists(inv_grid_path_src) else None
+        inv_grid_src = (
+            torch.load(inv_grid_path_src, map_location="cpu")
+            if os.path.exists(inv_grid_path_src)
+            else torch.empty(0)
+        )
         inv_grid_path_tgt = img_path_tgt.replace(".png", ".inv.pth").replace(".jpg", ".inv.pth")
-        inv_grid_tgt = torch.load(inv_grid_path_tgt, map_location="cpu") if os.path.exists(inv_grid_path_tgt) else None
+        inv_grid_tgt = (
+            torch.load(inv_grid_path_tgt, map_location="cpu")
+            if os.path.exists(inv_grid_path_tgt)
+            else torch.empty(0)
+        )
 
         img_pil_src = Image.open(img_path_src).convert("RGB")
         img_pil_tgt = Image.open(img_path_tgt).convert("RGB")
@@ -562,12 +574,12 @@ class UnpairedDataset(torch.utils.data.Dataset):
         # img_t_src = F.to_tensor(self.T(img_pil_src))
         # img_t_tgt = F.to_tensor(self.T(img_pil_tgt))
         # ✅ apply unified transform (auto-handles grid if needed)
-        if inv_grid_src is not None:
+        if inv_grid_src.numel() > 0:
             img_pil_src, inv_grid_src = self.T((img_pil_src, inv_grid_src))
         else:
             img_pil_src = self.T(img_pil_src)
 
-        if inv_grid_tgt is not None:
+        if inv_grid_tgt.numel() > 0:
             img_pil_tgt, inv_grid_tgt = self.T((img_pil_tgt, inv_grid_tgt))
         else:
             img_pil_tgt = self.T(img_pil_tgt)
@@ -584,8 +596,8 @@ class UnpairedDataset(torch.utils.data.Dataset):
             "caption_tgt": self.fixed_caption_tgt,
             "input_ids_src": self.input_ids_src,
             "input_ids_tgt": self.input_ids_tgt,
-            "has_inv_grid_src": inv_grid_src is not None,      
+            "has_inv_grid_src": inv_grid_src.numel() > 0,  
             "inv_grid_src": inv_grid_src,  
-            "has_inv_grid_tgt": inv_grid_tgt is not None,       
+            "has_inv_grid_tgt": inv_grid_tgt.numel() > 0,   
             "inv_grid_tgt": inv_grid_tgt,                 
         }
