@@ -174,15 +174,18 @@ def main(args):
         for step, batch in enumerate(train_dataloader):
             l_acc = [unet, net_disc_a, net_disc_b, vae_enc, vae_dec]
             with accelerator.accumulate(*l_acc):
-                img_a = batch["pixel_values_src"].to(dtype=weight_dtype)
-                img_b = batch["pixel_values_tgt"].to(dtype=weight_dtype)
-
+                img_a = batch["pixel_values_src"].to(dtype=weight_dtype) # NOTE: this is warped 
+                img_b = batch["pixel_values_tgt"].to(dtype=weight_dtype) # NOTE: this is warped
 
                 # ✅ Load inverse grid paths and flags (added)
                 has_inv_grid_src = batch["has_inv_grid_src"][0]
                 inv_grid_src = batch["inv_grid_src"][0]
                 has_inv_grid_tgt = batch["has_inv_grid_tgt"][0]
                 inv_grid_tgt = batch["inv_grid_tgt"][0]
+
+                # ✅ Then unwarp real images
+                img_a_un = unwarp(inv_grid_src, img_a) if has_inv_grid_src else img_a
+                img_b_un = unwarp(inv_grid_tgt, img_b) if has_inv_grid_tgt else img_b
 
 
                 bsz = img_a.shape[0]
@@ -205,8 +208,11 @@ def main(args):
                     cyc_rec_a = unwarp(inv_grid_src, cyc_rec_a)
 
 
-                loss_cycle_a = crit_cycle(cyc_rec_a, img_a) * args.lambda_cycle
-                loss_cycle_a += net_lpips(cyc_rec_a, img_a).mean() * args.lambda_cycle_lpips
+                # loss_cycle_a = crit_cycle(cyc_rec_a, img_a) * args.lambda_cycle
+                # loss_cycle_a += net_lpips(cyc_rec_a, img_a).mean() * args.lambda_cycle_lpips
+                loss_cycle_a = crit_cycle(cyc_rec_a, img_a_un) * args.lambda_cycle
+                loss_cycle_a += net_lpips(cyc_rec_a, img_a_un).mean() * args.lambda_cycle_lpips
+                
                 # B -> fake A -> rec B
                 cyc_fake_a = CycleGAN_Turbo.forward_with_networks(img_b, "b2a", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_b2a_emb)
                 cyc_rec_b = CycleGAN_Turbo.forward_with_networks(cyc_fake_a, "a2b", vae_enc, unet, vae_dec, noise_scheduler_1step, timesteps, fixed_a2b_emb)
@@ -219,8 +225,12 @@ def main(args):
                     cyc_rec_b = unwarp(inv_grid_tgt, cyc_rec_b)
 
 
-                loss_cycle_b = crit_cycle(cyc_rec_b, img_b) * args.lambda_cycle
-                loss_cycle_b += net_lpips(cyc_rec_b, img_b).mean() * args.lambda_cycle_lpips
+                # loss_cycle_b = crit_cycle(cyc_rec_b, img_b) * args.lambda_cycle
+                # loss_cycle_b += net_lpips(cyc_rec_b, img_b).mean() * args.lambda_cycle_lpips
+                loss_cycle_b = crit_cycle(cyc_rec_b, img_b_un) * args.lambda_cycle
+                loss_cycle_b += net_lpips(cyc_rec_b, img_b_un).mean() * args.lambda_cycle_lpips
+
+
                 accelerator.backward(loss_cycle_a + loss_cycle_b, retain_graph=False)
                 if accelerator.sync_gradients:
                     accelerator.clip_grad_norm_(params_gen, args.max_grad_norm)
@@ -266,11 +276,17 @@ def main(args):
                     idt_b = unwarp(inv_grid_src, idt_b)
                     
 
-                loss_idt_a = crit_idt(idt_a, img_b) * args.lambda_idt
-                loss_idt_a += net_lpips(idt_a, img_b).mean() * args.lambda_idt_lpips
-                loss_idt_b = crit_idt(idt_b, img_a) * args.lambda_idt
-                loss_idt_b += net_lpips(idt_b, img_a).mean() * args.lambda_idt_lpips
+                # loss_idt_a = crit_idt(idt_a, img_b) * args.lambda_idt
+                # loss_idt_a += net_lpips(idt_a, img_b).mean() * args.lambda_idt_lpips
+                # loss_idt_b = crit_idt(idt_b, img_a) * args.lambda_idt
+                # loss_idt_b += net_lpips(idt_b, img_a).mean() * args.lambda_idt_lpips
+                loss_idt_a = crit_idt(idt_a, img_b_un) * args.lambda_idt
+                loss_idt_a += net_lpips(idt_a, img_b_un).mean() * args.lambda_idt_lpips
+                loss_idt_b = crit_idt(idt_b, img_a_un) * args.lambda_idt
+                loss_idt_b += net_lpips(idt_b, img_a_un).mean() * args.lambda_idt_lpips
+
                 loss_g_idt = loss_idt_a + loss_idt_b
+
                 accelerator.backward(loss_g_idt, retain_graph=False)
                 if accelerator.sync_gradients:
                     accelerator.clip_grad_norm_(params_gen, args.max_grad_norm)
@@ -295,8 +311,11 @@ def main(args):
                 """
                 Discriminator for task a->b and b->a (real inputs)
                 """
-                loss_D_A_real = net_disc_a(img_b, for_real=True).mean() * args.lambda_gan
-                loss_D_B_real = net_disc_b(img_a, for_real=True).mean() * args.lambda_gan
+                # loss_D_A_real = net_disc_a(img_b, for_real=True).mean() * args.lambda_gan
+                # loss_D_B_real = net_disc_b(img_a, for_real=True).mean() * args.lambda_gan
+                loss_D_A_real = net_disc_a(img_b_un, for_real=True).mean() * args.lambda_gan
+                loss_D_B_real = net_disc_b(img_a_un, for_real=True).mean() * args.lambda_gan
+
                 loss_D_real = (loss_D_A_real + loss_D_B_real) * 0.5
                 accelerator.backward(loss_D_real, retain_graph=False)
                 if accelerator.sync_gradients:

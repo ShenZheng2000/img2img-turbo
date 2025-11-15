@@ -62,35 +62,39 @@ def process_image(input_path, output_path, model, bbox_map, args, T_val):
 
     with torch.no_grad():
         input_img = T_val(input_image)
-        x_t = transforms.ToTensor()(input_img)
-        x_t = transforms.Normalize([0.5], [0.5])(x_t).unsqueeze(0).cuda()
-
+        
         # --- warp / relight / unwarp pipeline ---
         if args.bw > 0:
 
+            x_01 = transforms.ToTensor()(input_img).unsqueeze(0).cuda()   # UNNORMALIZE version of x_t
+
             # (0) get GT bbox and apply forward warp
             base_name = os.path.basename(input_path)
-            bbox = get_gt_bbox(base_name, input_image, bbox_map, device=x_t.device)
-            warped, warp_grid = apply_forward_warp(x_t, bbox, bw=args.bw, separable=args.separable)
+            bbox = get_gt_bbox(base_name, input_image, bbox_map, device=x_01.device)
+            # warped, warp_grid = apply_forward_warp(x_t, bbox, bw=args.bw, separable=args.separable)
+            warped_01, warp_grid = apply_forward_warp(x_01, bbox, bw=args.bw, separable=args.separable)
 
             # (1) save warped image
-            warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0,1))
+            warped_pil = transforms.ToPILImage()(warped_01[0].cpu().clamp(0,1))
             warped_pil = warped_pil.resize((orig_w, orig_h), Image.LANCZOS)
             warped_pil.save(out_path.with_name(out_path.stem + "_warp" + ext))
 
             # (2) model on warped
-            output_image = model(warped, direction=args.direction, caption=args.prompt)
+            warped_norm = (warped_01 * 2.0 - 1.0)
+            output_image = model(warped_norm, direction=args.direction, caption=args.prompt)
 
             # (3) save warped + relit
             warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
             warped_relit_pil = warped_relit_pil.resize((orig_w, orig_h), Image.LANCZOS)
-            warped_relit_pil.save(out_path.with_name(out_path.stem + "_warp_process" + ext))
+            warped_relit_pil.save(out_path.with_name(out_path.stem + "_warp_relight" + ext))
 
             # (4) unwarp back
             output_image = apply_unwarp(warp_grid, output_image, separable=args.separable)
 
         else:
-            # (0) no warp → just model(x_t)
+            # no warp → just model(x_t)
+            x_t = transforms.ToTensor()(input_img)
+            x_t = transforms.Normalize([0.5], [0.5])(x_t).unsqueeze(0).cuda()
             output_image = model(x_t, direction=args.direction, caption=args.prompt)
 
         # (5) ALWAYS save final as warp_relight_unwarp

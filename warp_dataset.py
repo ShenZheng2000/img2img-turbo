@@ -25,7 +25,7 @@ def parse_args():
                 help="COCO JSON file for training set bboxes")
     p.add_argument("--val-bbox-json", type=str, default=None,
                 help="COCO JSON file for validation/test set bboxes")
-    p.add_argument("--warp-subfolders", nargs="+", default=["train_A", "test_A"],
+    p.add_argument("--warp-subfolders", nargs="+", default=["train_A"],
                 help="List of subfolders to warp (others will be copied only)")
     p.set_defaults(separable=True)
     return p.parse_args()

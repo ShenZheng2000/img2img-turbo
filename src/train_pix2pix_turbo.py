@@ -176,8 +176,8 @@ def main(args):
         for step, batch in enumerate(dl_train):
             l_acc = [net_pix2pix, net_disc]
             with accelerator.accumulate(*l_acc):
-                x_src = batch["conditioning_pixel_values"]
-                x_tgt = batch["output_pixel_values"]
+                x_src = batch["conditioning_pixel_values"] # NOTE: this is warped
+                x_tgt = batch["output_pixel_values"] # NOTE: this is unwarped
                 B, C, H, W = x_src.shape
                 # forward pass
                 x_tgt_pred = net_pix2pix(x_src, prompt_tokens=batch["input_ids"], deterministic=True) # [1, 3, 784, 784]
