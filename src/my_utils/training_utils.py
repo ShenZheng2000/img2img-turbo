@@ -299,7 +299,7 @@ def _flip_grid(grid):
 # ------------------------------------------------
 # 🔹 Unified Resize / Crop / Flip Transform
 # ------------------------------------------------
-def _transform_resize_crop_flip(inputs, resize_size, crop_size=None, hflip_prob=0.0):
+def _transform_resize_crop_flip(inputs, resize_size=None, crop_size=None, hflip_prob=0.0):
     """
     Apply Resize (+ optional RandomCrop + optional RandomHorizontalFlip)
     to both image and grid, keeping spatial consistency.
@@ -309,10 +309,16 @@ def _transform_resize_crop_flip(inputs, resize_size, crop_size=None, hflip_prob=
     else:
         img, grid = inputs, None
 
-    # ✅ Resize
-    img = F.resize(img, resize_size, interpolation=Image.LANCZOS)
-    if grid is not None:
-        grid = _resize_grid(grid, resize_size)
+    # # ✅ Optional Resize
+    # img = F.resize(img, resize_size, interpolation=Image.LANCZOS)
+    # if grid is not None:
+    #     grid = _resize_grid(grid, resize_size)
+
+    # ✅ Resize only if resize_size is not None
+    if resize_size is not None:
+        img = F.resize(img, resize_size, interpolation=Image.LANCZOS)
+        if grid is not None:
+            grid = _resize_grid(grid, resize_size)
 
     # ✅ Optional RandomCrop
     if crop_size is not None:
@@ -342,6 +348,11 @@ def build_transform(image_prep):
     if image_prep == "resize_286_randomcrop_256x256_hflip":
         return lambda x: _transform_resize_crop_flip(
             x, resize_size=(286, 286), crop_size=(256, 256), hflip_prob=0.5
+        )
+
+    elif image_prep == "randomcrop_256x256_hflip":
+        return lambda x: _transform_resize_crop_flip(
+            x, resize_size=None, crop_size=(256, 256), hflip_prob=0.5
         )
 
     elif image_prep in ["resize_256", "resize_256x256"]:

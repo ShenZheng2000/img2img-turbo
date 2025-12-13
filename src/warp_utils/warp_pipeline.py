@@ -188,17 +188,25 @@ def crop_to_foreground(input_path):
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)
 # ===============================================================
-def apply_forward_warp(image_tensor, bbox_tensor, bw, separable=True):
+def apply_forward_warp(image_tensor, bbox_tensor, bw, separable=True, output_shape=None):
     """
     Applies KDE-based forward warp around bbox region.
     Returns (warped_tensor, warp_grid).
     """
     device = image_tensor.device
     bbox_tensor = bbox_tensor.to(device)
+
     _, _, H, W = image_tensor.shape
+
+    # --- NEW LOGIC ---
+    if output_shape is None:
+        out_H, out_W = H, W
+    else:
+        out_H, out_W = output_shape
+
     grid_net = PlainKDEGrid(
         input_shape=(H, W),
-        output_shape=(H, W),
+        output_shape=(out_H, out_W),   # <--- FIXED HERE
         separable=separable,
         bandwidth_scale=bw,
         amplitude_scale=1.0,

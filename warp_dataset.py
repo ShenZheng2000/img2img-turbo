@@ -27,6 +27,10 @@ def parse_args():
                 help="COCO JSON file for validation/test set bboxes")
     p.add_argument("--warp-subfolders", nargs="+", default=["train_A"],
                 help="List of subfolders to warp (others will be copied only)")
+
+    p.add_argument("--out-h", type=int, default=None)
+    p.add_argument("--out-w", type=int, default=None)
+
     p.set_defaults(separable=True)
     return p.parse_args()
 
@@ -48,9 +52,11 @@ class WarpDatasetPipeline:
 
         mode_tag = "" if args.separable else "_nonsep"
         eye_tag = "_eyes" if args.include_eyes else ""
+        res_tag = f"_{args.out_h}x{args.out_w}" if args.out_h is not None and args.out_w is not None else ""
+
         self.output_root = os.path.join(
             args.input_root,
-            f"{args.target_prefix}_warped_{self.bandwidth_scale}{eye_tag}{mode_tag}"
+            f"{args.target_prefix}_warped_{self.bandwidth_scale}{eye_tag}{mode_tag}{res_tag}"
         )
         if args.relight_type:
             self.output_root = os.path.join(self.output_root, args.relight_type)
@@ -89,10 +95,25 @@ class WarpDatasetPipeline:
         visualize_bbox(img_pil, bbox, base, debug_dir)
 
         # --- warp images and compute inverse grid ---
+        if self.args.out_h is not None and self.args.out_w is not None:
+            output_shape = (self.args.out_h, self.args.out_w)
+        else:
+            output_shape = None
+
         warped_img, warp_grid = apply_forward_warp(
-            c_t, bbox, self.bandwidth_scale, separable=self.args.separable)
-        _, _, h_img, w_img = c_t.shape
-        inverse_grid = invert_grid(warp_grid, (1, 3, h_img, w_img), separable=self.args.separable)
+            c_t, 
+            bbox, 
+            self.bandwidth_scale, 
+            separable=self.args.separable, 
+            output_shape=output_shape
+        )
+
+        if output_shape is None:
+            out_h, out_w = c_t.shape[2], c_t.shape[3]
+        else:
+            out_h, out_w = output_shape
+
+        inverse_grid = invert_grid(warp_grid, (1, 3, out_h, out_w), separable=self.args.separable)
 
         # --- save images and grids ---
         base_noext, ext = os.path.splitext(base)
