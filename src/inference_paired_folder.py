@@ -119,20 +119,40 @@ def main():
     subfolders = sorted([p for p in input_root.iterdir() if p.is_dir()])
 
     img_list = []
-    for folder in subfolders:
-        # find all body images
-        body_imgs = sorted([
-            p for p in folder.glob("bdy_*.*")
+
+
+    # --------------------------------------------------
+    # Case 1: flat images: root/image/*.jpg
+    # --------------------------------------------------
+    images_dir = input_root / "image"
+    if images_dir.exists() and images_dir.is_dir():
+        img_list = sorted([
+            p for p in images_dir.glob("*")
             if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
         ])
-        if len(body_imgs) == 1:
-            img_list.append(body_imgs[0])
-        elif len(body_imgs) == 0:
-            print(f"⚠️ No body images found in {folder}")
-        else:
-            print(f"⚠️ Multiple body images found in {folder}, skipping.")
+        print(f"📁 Using flat image mode: {len(img_list)} images found in {images_dir}")
 
-    print(f"Found {len(img_list)} body images to process (one per folder).")
+    # --------------------------------------------------
+    # Case 2: legacy structure: root/subfolder/bdy_*.*
+    # --------------------------------------------------
+    else:
+        subfolders = sorted([p for p in input_root.iterdir() if p.is_dir()])
+        for folder in subfolders:
+            body_imgs = sorted([
+                p for p in folder.glob("bdy_*.*")
+                if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
+            ])
+            if len(body_imgs) == 1:
+                img_list.append(body_imgs[0])
+            elif len(body_imgs) == 0:
+                print(f"⚠️ No body images found in {folder}")
+            else:
+                print(f"⚠️ Multiple body images found in {folder}, skipping.")
+
+        print(f"📁 Using legacy folder mode: {len(img_list)} images found")
+
+    if len(img_list) == 0:
+        raise RuntimeError("❌ No images found to process.")
 
     for input_path in tqdm(img_list, desc="Processing"):
         process_image(input_path, model, face_app, args)

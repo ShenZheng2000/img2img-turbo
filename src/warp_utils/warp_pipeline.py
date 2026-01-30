@@ -14,6 +14,7 @@ import torch.nn.functional as F
 import os
 import json
 from PIL import Image, ImageOps
+from pathlib import Path
 
 # ===============================================================
 # ✅ Initialize face detector once
@@ -161,12 +162,50 @@ def resize_longest_side(img_pil, cropped_size, target_size):
     return img_pil.resize((new_w, new_h), Image.LANCZOS)
 
 
+def find_fg_mask_path(input_path):
+    """
+    ONLY responsible for finding mask_path.
+    Priority matches inference image selection:
+    flat > legacy
+    """
+    input_path = Path(input_path)
+
+    # -------------------------
+    # Flat layout (HIGH PRIORITY)
+    #   input_dir/images/xxx.jpg
+    #   input_dir/fg_masks/xxx.png
+    # -------------------------
+    if input_path.parent.name == "image":
+        root = input_path.parent.parent
+        fg_dir = root / "fg_masks"
+        if fg_dir.exists():
+            for ext in [".png", ".jpg", ".jpeg", ".webp"]:
+                candidate = fg_dir / f"{input_path.stem}{ext}"
+                if candidate.exists():
+                    return candidate
+
+    # -------------------------
+    # Legacy layout (FALLBACK)
+    #   seq_x/image.jpg
+    #   seq_x/pre_processing/black_fg_mask_groundedsam2.png
+    # -------------------------
+    legacy_mask = (
+        input_path.parent / "pre_processing" / "black_fg_mask_groundedsam2.png"
+    )
+    if legacy_mask.exists():
+        return legacy_mask
+
+    return None
+
+
 def crop_to_foreground(input_path):
-    input_root = input_path.parent  # e.g. .../8seconds_men_shirts_034
-    mask_path = input_root / "pre_processing" / "black_fg_mask_groundedsam2.png"
+    # input_root = input_path.parent  # e.g. .../8seconds_men_shirts_034
+    # mask_path = input_root / "pre_processing" / "black_fg_mask_groundedsam2.png"
 
     # print(f"\n🟢 Image: {input_path}")
     # print(f"🔍 Mask:  {mask_path}")
+
+    mask_path = find_fg_mask_path(input_path)
 
     img = Image.open(input_path).convert("RGB")
 

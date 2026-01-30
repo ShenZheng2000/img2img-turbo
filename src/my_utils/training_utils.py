@@ -8,7 +8,7 @@ from torchvision import transforms
 import torchvision.transforms.functional as F
 from torch.nn.functional import interpolate
 from glob import glob
-
+from pathlib import Path
 
 def parse_args_paired_training(input_args=None):
     """
@@ -177,6 +177,9 @@ def parse_args_unpaired_training():
     parser.add_argument("--gradient_checkpointing", action="store_true",
         help="Whether or not to use gradient checkpointing to save memory at the expense of slower backward pass.")
     parser.add_argument("--enable_xformers_memory_efficient_attention", action="store_true", help="Whether or not to use xformers.")
+
+    parser.add_argument("--restricted_pairs", action="store_true",
+                        help="Use source-stem-matched target instead of random target pairing.")
 
     args = parser.parse_args()
     return args
@@ -532,6 +535,15 @@ class UnpairedDataset(torch.utils.data.Dataset):
         """
         return len(self.l_imgs_src) + len(self.l_imgs_tgt)
 
+    def sample_paths(self, index):
+        """Override this to change pairing policy."""
+        if index < len(self.l_imgs_src):
+            img_path_src = self.l_imgs_src[index]
+        else:
+            img_path_src = random.choice(self.l_imgs_src)
+        img_path_tgt = random.choice(self.l_imgs_tgt)
+        return img_path_src, img_path_tgt
+
     def __getitem__(self, index):
         """
         Fetches a pair of unaligned images from the source and target domains along with their 
@@ -559,11 +571,12 @@ class UnpairedDataset(torch.utils.data.Dataset):
             - "input_ids_src": The source domain's fixed caption tokenized.
             - "input_ids_tgt": The target domain's fixed caption tokenized.
         """
-        if index < len(self.l_imgs_src):
-            img_path_src = self.l_imgs_src[index]
-        else:
-            img_path_src = random.choice(self.l_imgs_src)
-        img_path_tgt = random.choice(self.l_imgs_tgt)
+        # if index < len(self.l_imgs_src):
+        #     img_path_src = self.l_imgs_src[index]
+        # else:
+        #     img_path_src = random.choice(self.l_imgs_src)
+        # img_path_tgt = random.choice(self.l_imgs_tgt)
+        img_path_src, img_path_tgt = self.sample_paths(index)
 
         # detect + load inverse grids
         inv_grid_path_src = img_path_src.replace(".png", ".inv.pth").replace(".jpg", ".inv.pth")
@@ -612,3 +625,52 @@ class UnpairedDataset(torch.utils.data.Dataset):
             "has_inv_grid_tgt": inv_grid_tgt.numel() > 0,   
             "inv_grid_tgt": inv_grid_tgt,                 
         }
+
+
+class RestrictedUnpairedDataset(UnpairedDataset):
+    def __init__(self, dataset_folder, split, image_prep, tokenizer, sep="__"):
+        super().__init__(dataset_folder, split, image_prep, tokenizer)
+        self.sep = sep
+
+        # We sample SOURCE first (train_A). Each source has a stem like:
+        #   <stem>__crop_<panoid>.jpg
+        # Target (train_B) is the snowy image named:
+        #   <stem>.png  (or .jpg/.jpeg)
+        #
+        # Build a fast lookup: stem -> target_path (only for targets that exist)
+        self.tgt_by_stem = {}
+        for p in self.l_imgs_tgt:
+            stem = Path(p).stem   # e.g., "boreas-2021-01-26-..."
+            self.tgt_by_stem[stem] = p
+
+        # ---- PRINT ONCE so you know indexing looks right ----
+        print("[RestrictedUnpairedDataset] #targets indexed by stem:", len(self.tgt_by_stem))
+        # for k in list(self.tgt_by_stem.keys())[:5]:
+        #     print(f"  stem={k} -> tgt={os.path.basename(self.tgt_by_stem[k])}")
+
+    def sample_paths(self, index):
+        # pick source exactly like the base UnpairedDataset
+        img_path_src, _ = super().sample_paths(index)
+
+        # extract stem from source crop filename:
+        #   boreas-xxx__crop_yyy.jpg  ->  boreas-xxx
+        src_name = os.path.basename(img_path_src)
+
+        if self.sep in src_name:
+            # e.g. "boreas-xxx__crop_yyy.jpg" → "boreas-xxx"
+            stem = src_name.split(self.sep, 1)[0]
+        else:
+            # e.g. "boreas-xxx.png" → "boreas-xxx"
+            stem = Path(src_name).stem
+
+        # find the matched target (must exist for valid source)
+        img_path_tgt = self.tgt_by_stem.get(stem)
+        if img_path_tgt is None:
+            # reject this source and resample
+            new_index = random.randint(0, len(self) - 1)
+            return self.sample_paths(new_index)
+
+        # ---- PRINT PAIRS so you can verify training is correct ----
+        # print(f"[PAIR] stem={stem} | src={os.path.basename(img_path_src)} -> tgt={os.path.basename(img_path_tgt)}")
+
+        return img_path_src, img_path_tgt

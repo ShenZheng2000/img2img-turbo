@@ -18,7 +18,7 @@ from cleanfid.fid import get_folder_features, build_feature_extractor, frechet_d
 import vision_aided_loss
 from model import make_1step_sched
 from cyclegan_turbo import CycleGAN_Turbo, VAE_encode, VAE_decode, initialize_unet, initialize_vae
-from my_utils.training_utils import UnpairedDataset, build_transform, parse_args_unpaired_training
+from my_utils.training_utils import UnpairedDataset, RestrictedUnpairedDataset, build_transform, parse_args_unpaired_training
 from my_utils.dino_struct import DinoStructureLoss
 
 # NOTE: add this to avoid NCCL timeout
@@ -81,7 +81,13 @@ def main(args):
     optimizer_disc = torch.optim.AdamW(params_disc, lr=args.learning_rate, betas=(args.adam_beta1, args.adam_beta2),
         weight_decay=args.adam_weight_decay, eps=args.adam_epsilon,)
 
-    dataset_train = UnpairedDataset(dataset_folder=args.dataset_folder, image_prep=args.train_img_prep, split="train", tokenizer=tokenizer)
+    # dataset_train = UnpairedDataset(dataset_folder=args.dataset_folder, image_prep=args.train_img_prep, split="train", tokenizer=tokenizer)
+    DatasetCls = RestrictedUnpairedDataset if args.restricted_pairs else UnpairedDataset
+    dataset_train = DatasetCls(dataset_folder=args.dataset_folder,
+                                image_prep=args.train_img_prep,
+                                split="train",
+                                tokenizer=tokenizer)
+
     train_dataloader = torch.utils.data.DataLoader(dataset_train, batch_size=args.train_batch_size, shuffle=True, num_workers=args.dataloader_num_workers)
     T_val = build_transform(args.val_img_prep)
     fixed_caption_src = dataset_train.fixed_caption_src
