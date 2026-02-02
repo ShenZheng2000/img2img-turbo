@@ -1,15 +1,12 @@
 # # # # Example usage with input_root (different), warp-subfolders (all), and bbox-json (gt)
-# # target_prefix="bdd100k_7_19_night"
-# target_prefix="bdd100k_1_20"
-# # target_prefix="bdd100k_boreas"
+target_prefix="cityscapes_to_dark_zurich"
 
-# # NOTE: use these new output height and width to debug now. 
-# python warp_dataset.py \
-#   --input_root /home/shenzhen/Datasets/BDD100K \
-#   --target_prefix $target_prefix \
-#   --bw 64 \
-#   --warp-subfolders train_A train_B \
-#   --train-bbox-json /home/shenzhen/Datasets/BDD100K/100k/coco_labels/bdd100k_train_scale_0p5.json \
-#   --val-bbox-json /home/shenzhen/Datasets/BDD100K/100k/coco_labels/bdd100k_val_scale_0p5.json \
-#   --out-h 286 \
-#   --out-w 286
+# TODO: think about warp to resize or not at all? can use this one --out-h 286 --out-w 286
+# NOTE: use bw 128 for now.
+python warp_dataset.py \
+  --input_root /ssd0/shenzhen/Datasets/driving \
+  --target_prefix $target_prefix \
+  --bw 128 \
+  --warp-subfolders train_A train_B \
+  --train-bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_train_poly.json \
+  --val-bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json

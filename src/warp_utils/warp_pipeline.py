@@ -130,13 +130,21 @@ def visualize_bbox(img_pil, bbox_tensor, base_name, save_dir):
 
 
 def load_bbox_map(train_json, val_json):
-    """Load and merge COCO JSON bbox maps for train + val/test."""
+    """Load and merge COCO JSON bbox maps for train + val/test (keyed by basename)."""
     def _load_one(path):
         if not path or not os.path.exists(path):
             return {}
         with open(path, "r") as f:
             coco = json.load(f)
-        id2name = {img["id"]: img["file_name"] for img in coco["images"]}
+
+        # MIN CHANGE: basename keys + collision check
+        id2name = {}
+        for img in coco["images"]:
+            base = os.path.basename(img["file_name"])
+            if base in id2name.values():
+                raise RuntimeError(f"❌ Basename collision in {path}: {img['file_name']} -> {base}")
+            id2name[img["id"]] = base
+
         out = {}
         for ann in coco["annotations"]:
             fn = id2name[ann["image_id"]]
@@ -147,8 +155,22 @@ def load_bbox_map(train_json, val_json):
     merged = {}
     for src in [train_json, val_json]:
         part = _load_one(src)
+
+        # MIN CHANGE: prevent silent overwrite across jsons
+        dup = set(merged).intersection(part)
+        if dup:
+            raise RuntimeError(f"❌ Basename collision across splits: {sorted(list(dup))[:10]} (and maybe more)")
         merged.update(part)
+
     print(f"✅ Total merged bbox entries: {len(merged)}")
+
+    # DEBUG: print first few entries
+    print("🔎 [DEBUG] bbox_map sample:")
+    for i, (k, v) in enumerate(merged.items()):
+        print(f"  {i}: {k} -> {v}")
+        if i >= 4:
+            break
+
     return merged if merged else None
 
 
