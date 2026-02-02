@@ -31,6 +31,13 @@ train_pix2pix() {
         --max_train_steps $MAX_STEPS
 }
 
+# TODO: these ones. 
+# train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged/noon_sunlight_1" 40000
+# train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" 40000
+
+# train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged/golden_sunlight_1" 40000
+train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/golden_sunlight_1" 40000
+
 # train_pix2pix "exp_1_10_1/golden_sunlight_1"
 # train_pix2pix "exp_1_10_1_warped_128_eyes/golden_sunlight_1"
 

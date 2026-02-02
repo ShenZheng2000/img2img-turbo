@@ -31,8 +31,10 @@ train_cyclegan() {
         $EXTRA_ARGS
 }
 
+# TODO: train cs -> foggy cs; and cs -> dark zurich, with and without warping (need to prepare some json?)
+
 # NOTE: use restricted source-target pairs for this experiment
-train_cyclegan "boreas_1_26_v2" "resize_286_randomcrop_256x256_hflip" 1
+# train_cyclegan "boreas_1_26_v2" "resize_286_randomcrop_256x256_hflip" 1
 
 # train_cyclegan "boreas_1_26" "resize_286_randomcrop_256x256_hflip"
 
