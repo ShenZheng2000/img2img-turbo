@@ -31,7 +31,11 @@ train_cyclegan() {
         $EXTRA_ARGS
 }
 
-# TODO: train cs -> foggy cs; and cs -> dark zurich, with and without warping (need to prepare some json?)
+# TODO: these experiments below, one by one!!!!
+# train_cyclegan "cityscapes_to_dark_zurich" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "cityscapes_to_dark_zurich_warped_128" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan " cityscapes_to_dense_fog" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "cityscapes_to_dense_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
 
 # NOTE: use restricted source-target pairs for this experiment
 # train_cyclegan "boreas_1_26_v2" "resize_286_randomcrop_256x256_hflip" 1

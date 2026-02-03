@@ -130,17 +130,33 @@ def main(
 # )
 
 
-# Example 2: Foggy Cityscapes (select a specific beta)
-beta_B = "0.02"
-beta_tag = beta_B.replace(".", "")
+# # Example 2: Foggy Cityscapes (select a specific beta) => skip for now! 
+# beta_B = "0.02"
+# beta_tag = beta_B.replace(".", "")
+# main(
+#     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
+#     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
+#     train_B_root="/ssd0/shenzhen/Datasets/driving/foggy_cityscapes/leftImg8bit_foggy/train",
+#     test_B_root="/ssd0/shenzhen/Datasets/driving/foggy_cityscapes/leftImg8bit_foggy/val",
+#     output_root=f"/ssd0/shenzhen/Datasets/driving/cityscapes_to_foggy_cityscapes_beta_{beta_tag}",
+#     prompt_A="driving in the day",
+#     prompt_B="driving in heavy fog",
+#     beta_B=beta_B,   # set to "0.005", "0.01", "0.02", or None to disable filtering
+#     dry_run=False,
+# )
+
+
+# Example 3: Dense foggy (no beta filter)
 main(
     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
-    train_B_root="/ssd0/shenzhen/Datasets/driving/foggy_cityscapes/leftImg8bit_foggy/train",
-    test_B_root="/ssd0/shenzhen/Datasets/driving/foggy_cityscapes/leftImg8bit_foggy/val",
-    output_root=f"/ssd0/shenzhen/Datasets/driving/cityscapes_to_foggy_cityscapes_beta_{beta_tag}",
+    train_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/train_dense_fog",
+    test_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/val_dense_fog",
+    output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog",
     prompt_A="driving in the day",
     prompt_B="driving in heavy fog",
-    beta_B=beta_B,   # set to "0.005", "0.01", "0.02", or None to disable filtering
+    beta_B=None,
     dry_run=False,
 )
+
+# TODO: should we do snowy later for dense (first make sure foggy works OK!)

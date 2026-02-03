@@ -129,49 +129,67 @@ def visualize_bbox(img_pil, bbox_tensor, base_name, save_dir):
         print(f"[WARN] Failed to visualize bbox for {base_name}: {e}")
 
 
-def load_bbox_map(train_json, val_json):
-    """Load and merge COCO JSON bbox maps for train + val/test (keyed by basename)."""
-    def _load_one(path):
+def load_bbox_map(json_list):
+    """
+    Load and merge MANY COCO JSON bbox maps.
+    Keyed by basename.
+    Crashes on any basename collision.
+    """
+    if not json_list:
+        return None
+
+    merged = {}
+
+    for path in json_list:
         if not path or not os.path.exists(path):
-            return {}
+            continue
+
         with open(path, "r") as f:
             coco = json.load(f)
 
-        # MIN CHANGE: basename keys + collision check
+        # build id -> basename
         id2name = {}
+        seen = set()
         for img in coco["images"]:
             base = os.path.basename(img["file_name"])
-            if base in id2name.values():
-                raise RuntimeError(f"❌ Basename collision in {path}: {img['file_name']} -> {base}")
+            if base in seen:
+                raise RuntimeError(f"❌ Basename collision INSIDE {path}: {base}")
+            seen.add(base)
             id2name[img["id"]] = base
 
-        out = {}
+        # collect bboxes
+        part = {}
         for ann in coco["annotations"]:
             fn = id2name[ann["image_id"]]
-            out.setdefault(fn, []).append(ann["bbox"])  # [x, y, w, h]
-        print(f"📘 Loaded {len(out)} bbox entries from {path}")
-        return out
+            part.setdefault(fn, []).append(ann["bbox"])
 
-    merged = {}
-    for src in [train_json, val_json]:
-        part = _load_one(src)
+        print(f"📘 Loaded {len(part)} entries from {path}")
 
-        # MIN CHANGE: prevent silent overwrite across jsons
+        # merge, but forbid overwriting
         dup = set(merged).intersection(part)
         if dup:
-            raise RuntimeError(f"❌ Basename collision across splits: {sorted(list(dup))[:10]} (and maybe more)")
+            raise RuntimeError(
+                f"❌ Basename collision ACROSS JSONs: {sorted(list(dup))[:5]}"
+            )
+
         merged.update(part)
 
     print(f"✅ Total merged bbox entries: {len(merged)}")
 
-    # DEBUG: print first few entries
-    print("🔎 [DEBUG] bbox_map sample:")
-    for i, (k, v) in enumerate(merged.items()):
-        print(f"  {i}: {k} -> {v}")
-        if i >= 4:
-            break
+    # ---- DEBUG PREVIEW ----
+    print("🔎 [DEBUG] bbox_map preview:")
+    keys = list(merged.keys())
 
-    return merged if merged else None
+    for i, k in enumerate(keys[:4]):
+        print(f"  [TOP {i}] {k} -> {merged[k]}")
+
+    if len(keys) > 4:
+        print("  ...")
+
+    for i, k in enumerate(keys[-4:]):
+        print(f"  [BOT {len(keys)-4+i}] {k} -> {merged[k]}")
+
+    return merged
 
 
 def resize_longest_side(img_pil, cropped_size, target_size):

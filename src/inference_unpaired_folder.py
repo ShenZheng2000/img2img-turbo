@@ -29,8 +29,9 @@ def parse_args():
 
     # warp-related
     parser.add_argument('--bw', type=int, default=0)
-    parser.add_argument('--train-bbox-json', type=str, default=None)
-    parser.add_argument('--val-bbox-json', type=str, default=None)
+    # parser.add_argument('--train-bbox-json', type=str, default=None)
+    # parser.add_argument('--val-bbox-json', type=str, default=None)
+    p.add_argument("--bbox-json", nargs="+", default=None)
     parser.add_argument('--separable', action="store_true", default=True)
 
     args = parser.parse_args()
@@ -117,7 +118,8 @@ def main():
 
     os.makedirs(args.output_dir, exist_ok=True)
 
-    bbox_map = load_bbox_map(args.train_bbox_json, args.val_bbox_json)
+    # bbox_map = load_bbox_map(args.train_bbox_json, args.val_bbox_json)
+    bbox_map = load_bbox_map(args.bbox_json)
 
     # gather images
     image_paths = []

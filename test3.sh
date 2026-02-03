@@ -17,14 +17,14 @@
 #     --output_dir "output/cyclegan_turbo/boreas_1_26_v2_resize_286_randomcrop_256x256_hflip/result_A"
 
 
-# # #  boreas snowy -> google street view
-CUDA_VISIBLE_DEVICES=4 python src/inference_unpaired_folder.py \
-    --prompt "driving in the day" \
-    --direction "b2a" \
-    --model_path "output/cyclegan_turbo/boreas_1_26_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
-    --image_prep "no_resize" \
-    --input_dir "/ssd0/shenzhen/Datasets/driving/boreas_1_26/test_B" \
-    --output_dir "output/cyclegan_turbo/boreas_1_26_resize_286_randomcrop_256x256_hflip/result_B"
+# # # #  boreas snowy -> google street view
+# CUDA_VISIBLE_DEVICES=4 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "output/cyclegan_turbo/boreas_1_26_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/boreas_1_26/test_B" \
+#     --output_dir "output/cyclegan_turbo/boreas_1_26_resize_286_randomcrop_256x256_hflip/result_B"
 
 
 # TODO: also do the opposite way later! 
