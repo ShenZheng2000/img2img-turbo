@@ -2,7 +2,7 @@ input_root="/ssd0/shenzhen/Datasets/relighting"
 target_prefix="exp_1_10_1"
 target_prefix_2="exp_1_10_1_v2"
 merged_prefix="${target_prefix}_${target_prefix_2}_merged"
-relight_type="moonlight_1"
+relight_type="foggy_1"
 bw=128
 
 # # # merge dataset (optional, NOTE: merge and then warp)

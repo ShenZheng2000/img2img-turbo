@@ -146,17 +146,32 @@ def main(
 # )
 
 
-# Example 3: Dense foggy (no beta filter)
+# # Example 3: Dense foggy (no beta filter)
+# main(
+#     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
+#     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
+#     train_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/train_dense_fog",
+#     test_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/val_dense_fog",
+#     output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog",
+#     prompt_A="driving in the day",
+#     prompt_B="driving in heavy fog",
+#     beta_B=None,
+#     dry_run=False,
+# )
+
+
+# # Example 3: Cityscapes -> ACDC foggy (no beta filter)
 main(
     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
-    train_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/train_dense_fog",
-    test_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/val_dense_fog",
-    output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog",
+    train_B_root="/ssd0/shenzhen/Datasets/driving/acdc/rgb_anon/fog/train",
+    test_B_root="/ssd0/shenzhen/Datasets/driving/acdc/rgb_anon/fog/val",
+    output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog",
     prompt_A="driving in the day",
     prompt_B="driving in heavy fog",
     beta_B=None,
     dry_run=False,
 )
 
-# TODO: should we do snowy later for dense (first make sure foggy works OK!)
+
+# # Example 3: Cityscapes -> ACDC rain/night (no beta filter) => TODO later!

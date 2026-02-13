@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument('--bw', type=int, default=0)
     # parser.add_argument('--train-bbox-json', type=str, default=None)
     # parser.add_argument('--val-bbox-json', type=str, default=None)
-    p.add_argument("--bbox-json", nargs="+", default=None)
+    parser.add_argument("--bbox-json", nargs="+", default=None)
     parser.add_argument('--separable', action="store_true", default=True)
 
     args = parser.parse_args()

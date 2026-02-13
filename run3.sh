@@ -3,8 +3,10 @@ train_cyclegan() {
     TRAIN_PREP="$2"
     RESTRICTED="${3:-0}"   # default 0
 
+    ACC_CONFIG=/home/shenzhen/.cache/huggingface/accelerate/default_config8gpus.yaml
     DATASET="/ssd0/shenzhen/Datasets/driving/${DATASET_NAME}"
-    OUTPUT="output/cyclegan_turbo/${DATASET_NAME}_${TRAIN_PREP}"
+    # OUTPUT="output/cyclegan_turbo/${DATASET_NAME}_${TRAIN_PREP}" # TODO: move ckpt to output/ or data3 later! 
+    OUTPUT="/ssd0/shenzhen/cyclegan_turbo/${DATASET_NAME}_${TRAIN_PREP}"
     PROJECT="${DATASET_NAME//\//_}_${TRAIN_PREP}"  # for wandb tracking
     
     EXTRA_ARGS=""
@@ -15,7 +17,9 @@ train_cyclegan() {
     # NOTE: --max_train_steps assumes 8 GPUs!!!!!
     # NOTE: adjust config: /home/shenzhen/.cache/huggingface/accelerate/default_config.yaml
     # NOTE: use validation_steps > max_train_steps to save time! 
-    accelerate launch --main_process_port 29501 src/train_cyclegan_turbo.py \
+    accelerate launch \
+        --config_file "$ACC_CONFIG" \
+        src/train_cyclegan_turbo.py \
         --pretrained_model_name_or_path="stabilityai/sd-turbo" \
         --dataset_folder "$DATASET" \
         --output_dir="$OUTPUT" \
@@ -31,15 +35,16 @@ train_cyclegan() {
         $EXTRA_ARGS
 }
 
-# TODO: these experiments below, one by one!!!!
 # train_cyclegan "cityscapes_to_dark_zurich" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dark_zurich_warped_128" "resize_286_randomcrop_256x256_hflip"
-# train_cyclegan " cityscapes_to_dense_fog" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "cityscapes_to_dense_fog" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dense_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "cityscapes_to_acdc_fog" "resize_286_randomcrop_256x256_hflip"
+train_cyclegan "cityscapes_to_acdc_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
+
 
 # NOTE: use restricted source-target pairs for this experiment
 # train_cyclegan "boreas_1_26_v2" "resize_286_randomcrop_256x256_hflip" 1
-
 # train_cyclegan "boreas_1_26" "resize_286_randomcrop_256x256_hflip"
 
 # train_cyclegan "bdd100k_7_19_night" "resize_286_randomcrop_256x256_hflip"

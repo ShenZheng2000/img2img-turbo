@@ -65,7 +65,7 @@ run_inference() {
     # Run inference
     # -------------------------------
     echo "Launching inference on $EXP ..."
-    CUDA_VISIBLE_DEVICES=0 python src/inference_paired_folder.py \
+    python src/inference_paired_folder.py \
         --model_path "$MODEL_PATH" \
         --input_dir "$INPUT_DIR" \
         --prompt "$PROMPT" \
@@ -77,9 +77,9 @@ run_inference() {
 # Examples
 # ===============================================================
 
-# relight_type=golden_sunlight_1
+relight_type=golden_sunlight_1
 # relight_type=moonlight_1
-relight_type=foggy_1
+# relight_type=foggy_1
 # relight_type=noon_sunlight_1
 # relight_type=dusk_backlit_1
 
@@ -111,8 +111,10 @@ relight_type=foggy_1
 # run_inference "exp_1_1_warped_128_eyes/${relight_type}" "VITON/test"
 # run_inference "exp_1_1/${relight_type}" "VITON/test"
 
-run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "VITON/test"
+# run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "VITON/test"
 # run_inference "exp_1_10_1/${relight_type}" "VITON/test"
+
+run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "VITON/test"
 
 # =====================================
 # street_tryon/validation
