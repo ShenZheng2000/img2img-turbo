@@ -1,42 +1,119 @@
-# clear2foggy (base)
-python src/inference_unpaired_folder.py \
- --prompt "driving in heavy fog" \
- --direction "a2b" \
- --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
- --image_prep "no_resize" \
- --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_A" \
- --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_A"
-
-# foggy2clear (base)
+# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
 CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
- --prompt "driving in the day" \
- --direction "b2a" \
- --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
- --image_prep "no_resize" \
- --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B" \
- --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_B"
+    --prompt "driving in heavy rain" \
+    --direction "a2b" \
+    --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+    --image_prep "no_resize" \
+    --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_A" \
+    --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_A"
 
-# # clear2foggy (warped 128)
+# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
 CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
- --prompt "driving in heavy fog" \
- --direction "a2b" \
- --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
- --image_prep "no_resize" \
- --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_A" \
- --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_A" \
- --bw 128 \
- --bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json
+    --prompt "driving in the day" \
+    --direction "b2a" \
+    --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+    --image_prep "no_resize" \
+    --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_B" \
+    --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_B"
 
-# # # foggy2clear (warped 128)
-CUDA_VISIBLE_DEVICES=3 python src/inference_unpaired_folder.py \
- --prompt "driving in the day" \
- --direction "b2a" \
- --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
- --image_prep "no_resize" \
- --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B" \
- --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_B" \
- --bw 128 \
- --bbox-json /ssd0/shenzhen/Datasets/driving/acdc/gt_detection/instancesonly_val_gt_detection.json
+
+# # # BDD100K_day2night_resize_286_randomcrop_256x256_hflip
+# python src/inference_unpaired_folder.py \
+#     --prompt "driving in the night" \
+#     --direction "a2b" \
+#     --model_path "output/cyclegan_turbo/BDD100K_day2night_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_day2night/test_A" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_day2night_resize_286_randomcrop_256x256_hflip/result_A"
+
+# # # BDD100K_day2night_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "output/cyclegan_turbo/BDD100K_day2night_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_day2night/test_B" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_day2night_resize_286_randomcrop_256x256_hflip/result_B"
+
+# # # BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the night" \
+#     --direction "a2b" \
+#     --model_path "output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_day2night/test_A" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/result_A" \
+#     --bw 128 \
+#     --bbox-json /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_val_coco.json
+
+# # # BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=3 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_day2night/test_B" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/result_B" \
+#     --bw 128 \
+#     --bbox-json /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_val_coco.json
+
+# # day2night (pretrained)
+# python src/inference_unpaired_folder.py \
+#     --prompt "driving in the night" \
+#     --direction "a2b" \
+#     --model_path "pretrained/day2night.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/home/shenzhen/Datasets/BDD100K/bdd100k_7_19_night/test_A" \
+#     --output_dir "output/cyclegan_turbo/pretrained_day2night/result_A"
+
+# # night2day (pretrained)
+# python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "pretrained/day2night.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/home/shenzhen/Datasets/BDD100K/bdd100k_7_19_night/test_B" \
+#     --output_dir "output/cyclegan_turbo/pretrained_day2night/result_B"
+
+# # clear2foggy (base)
+# python src/inference_unpaired_folder.py \
+#  --prompt "driving in heavy fog" \
+#  --direction "a2b" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_A" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_A"
+
+# # foggy2clear (base)
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#  --prompt "driving in the day" \
+#  --direction "b2a" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_B"
+
+# # # clear2foggy (warped 128)
+# CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
+#  --prompt "driving in heavy fog" \
+#  --direction "a2b" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_A" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_A" \
+#  --bw 128 \
+#  --bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json
+
+# # # # foggy2clear (warped 128)
+# CUDA_VISIBLE_DEVICES=3 python src/inference_unpaired_folder.py \
+#  --prompt "driving in the day" \
+#  --direction "b2a" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_B" \
+#  --bw 128 \
+#  --bbox-json /ssd0/shenzhen/Datasets/driving/acdc/gt_detection/instancesonly_val_gt_detection.json
 
 # day2night (base)
 # python src/inference_unpaired_folder.py \
@@ -108,8 +185,6 @@ CUDA_VISIBLE_DEVICES=3 python src/inference_unpaired_folder.py \
 #     --input_dir "/ssd0/shenzhen/Datasets/driving/boreas_1_26/test_B" \
 #     --output_dir "output/cyclegan_turbo/boreas_1_26_resize_286_randomcrop_256x256_hflip/result_B"
 
-
-# TODO: also do the opposite way later! 
 
 # day2night (base)
 # python src/inference_unpaired_folder.py \

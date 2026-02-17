@@ -35,12 +35,19 @@ train_cyclegan() {
         $EXTRA_ARGS
 }
 
+
+# train_cyclegan "BDD100K_day2night" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "BDD100K_day2night_warped_128" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "BDD100K_clear2rainy" "resize_286_randomcrop_256x256_hflip"
+# TODO: run this one later! 
+train_cyclegan "BDD100K_clear2rainy_warped_128" "resize_286_randomcrop_256x256_hflip"
+
 # train_cyclegan "cityscapes_to_dark_zurich" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dark_zurich_warped_128" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dense_fog" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dense_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_acdc_fog" "resize_286_randomcrop_256x256_hflip"
-train_cyclegan "cityscapes_to_acdc_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
+# train_cyclegan "cityscapes_to_acdc_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
 
 
 # NOTE: use restricted source-target pairs for this experiment

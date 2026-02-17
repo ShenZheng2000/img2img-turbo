@@ -65,7 +65,7 @@ run_inference() {
     # Run inference
     # -------------------------------
     echo "Launching inference on $EXP ..."
-    python src/inference_paired_folder.py \
+    CUDA_VISIBLE_DEVICES=7 python src/inference_paired_folder.py \
         --model_path "$MODEL_PATH" \
         --input_dir "$INPUT_DIR" \
         --prompt "$PROMPT" \
@@ -81,7 +81,6 @@ relight_type=golden_sunlight_1
 # relight_type=moonlight_1
 # relight_type=foggy_1
 # relight_type=noon_sunlight_1
-# relight_type=dusk_backlit_1
 
 # =====================================
 # dataset_with_garment_bigface_100
@@ -114,7 +113,7 @@ relight_type=golden_sunlight_1
 # run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "VITON/test"
 # run_inference "exp_1_10_1/${relight_type}" "VITON/test"
 
-run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "VITON/test"
+# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "VITON/test"
 
 # =====================================
 # street_tryon/validation
@@ -133,8 +132,9 @@ run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" 
 # run_inference "exp_1_6_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"
 # run_inference "exp_1_6/${relight_type}" "street_tryon/validation_big_sample_100"
 
-# =====================================
-# dataset_with_garment_bigface_start_100_end_200 (no need to test the base model)
-# =====================================
-# run_inference "exp_10_16_exp_12_7_merged/${relight_type}" "dataset_with_garment_bigface_start_100_end_200"
-# run_inference "exp_10_16_exp_12_7_merged_warped_128_eyes/${relight_type}" "dataset_with_garment_bigface_start_100_end_200"
+# run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"
+# run_inference "exp_1_10_1/${relight_type}" "street_tryon/validation_big_sample_100"
+
+# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"
+
+run_inference "exp_1_1_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"

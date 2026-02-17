@@ -59,7 +59,8 @@ def process_image(input_path, output_path, model, bbox_map, args, T_val):
     input_image = Image.open(input_path).convert('RGB')
     orig_w, orig_h = input_image.width, input_image.height
     out_path = Path(output_path)
-    ext = out_path.suffix   # keep original extension (.jpg / .png)
+    # ext = out_path.suffix   # keep original extension (.jpg / .png)
+    ext = ".png"   # always save as PNG
 
     with torch.no_grad():
         input_img = T_val(input_image)
