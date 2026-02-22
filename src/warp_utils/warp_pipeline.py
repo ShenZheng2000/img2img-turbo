@@ -32,15 +32,11 @@ def detect_face_bbox(image_pil, face_app=None, include_eyes=False):
         - torch.Tensor of shape [1, 4] if include_eyes=False → face only
         - torch.Tensor of shape [3, 4] if include_eyes=True  → [face, left_eye, right_eye]
     """
-    img_cv2 = np.array(image_pil)[:, :, ::-1]  # PIL → BGR
-    faces = face_app.get(img_cv2)
+    img_cv2 = np.array(image_pil)[:, :, ::-1]
+    faces = face_app.get(img_cv2) if face_app is not None else []
     h, w = image_pil.height, image_pil.width
 
-    # fallback: full image
-    x1, y1, x2, y2 = 0, 0, w, h
-
     if faces:
-        # use largest detected face
         faces.sort(key=lambda f: (f.bbox[2]-f.bbox[0])*(f.bbox[3]-f.bbox[1]), reverse=True)
         face = faces[0]
         x1, y1, x2, y2 = map(int, face.bbox)
@@ -49,8 +45,10 @@ def detect_face_bbox(image_pil, face_app=None, include_eyes=False):
             left_eye_box, right_eye_box = _compute_eye_boxes(face, x1, y1, x2, y2)
             return torch.tensor([[x1, y1, x2, y2], left_eye_box, right_eye_box], dtype=torch.float32)
 
-    # if no eyes or not requested → just return face
-    return torch.tensor([[x1, y1, x2, y2]], dtype=torch.float32)
+        return torch.tensor([[x1, y1, x2, y2]], dtype=torch.float32)
+
+    # ✅ no face found (FIXED: no face instead of image-center as face-center!)
+    return None
 
 def _compute_eye_boxes(face, x1, y1, x2, y2):
     """Compute left/right eye boxes from 5-point keypoints."""
@@ -290,9 +288,10 @@ def apply_forward_warp(image_tensor, bbox_tensor, bw, separable=True, output_sha
         bandwidth_scale=bw,
         amplitude_scale=1.0,
     ).to(device)
-    warp_grid = grid_net(image_tensor, gt_bboxes=bbox_tensor.unsqueeze(0))
+    # warp_grid = grid_net(image_tensor, gt_bboxes=bbox_tensor.unsqueeze(0))
+    warp_grid, saliency = grid_net(image_tensor, gt_bboxes=bbox_tensor.unsqueeze(0), return_saliency=True)
     warped = warp(warp_grid, image_tensor)
-    return warped, warp_grid
+    return warped, warp_grid, saliency
 
 # ===============================================================
 # ✅ Unwarp (returns restored tensor)

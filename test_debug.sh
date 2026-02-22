@@ -83,23 +83,23 @@ run_inference() {
 # exp_1_10_1                                        -> no warp-unwarp
 
 
-# # =====================================
-# # VITON/test_sample_100
-# # =====================================
-run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1_warped_128_eyes/noon_sunlight_1" "VITON/test_sample_100"
+# # # =====================================
+# # # street_tryon/validation
+# # # =====================================
+run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1_warped_128_eyes/noon_sunlight_1" "street_tryon/validation_big_sample_100" 1
 
 # NOTE: only noon sunlight needed for this one 
-run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "VITON/test_sample_100"
+run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "street_tryon/validation_big_sample_100" 1
 
-run_inference "exp_1_10_1/golden_sunlight_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1/moonlight_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1/foggy_1" "VITON/test_sample_100"
-run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test_sample_100"
+run_inference "exp_1_10_1/golden_sunlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1/moonlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1/foggy_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_10_1/noon_sunlight_1" "street_tryon/validation_big_sample_100" 1
 
-run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "VITON/test_sample_100"
-run_inference "exp_1_1_warped_128_eyes/moonlight_1" "VITON/test_sample_100"
-run_inference "exp_1_1_warped_128_eyes/foggy_1" "VITON/test_sample_100"
-run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "VITON/test_sample_100"
+run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_1_warped_128_eyes/moonlight_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_1_warped_128_eyes/foggy_1" "street_tryon/validation_big_sample_100" 1
+run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "street_tryon/validation_big_sample_100" 1

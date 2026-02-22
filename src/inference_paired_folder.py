@@ -71,25 +71,36 @@ def process_image(input_path, model, face_app, args):
 
             # (0) get bbox and apply forward warp
             bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
-            warped, warp_grid = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
+            if bbox is None:
+                output_image = model(c_t, args.prompt)
+            else:
+                warped, warp_grid, saliency = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
 
-            # (1) save warped image
-            # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
-            warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
-            warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
-            warped_pil.save(output_path.with_name(output_path.stem + "_warp.png"))
+                # (1) save warped image
+                # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
+                warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
+                warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
+                warped_pil.save(output_path.with_name(output_path.stem + "_warp.png"))
 
-            # (2) relight
-            output_image = model(warped, args.prompt)
-            # print(f"📊 relit tensor range:  min={output_image.min().item():.3f}, max={output_image.max().item():.3f}")
+                # (1.5) save saliency map at native resolution (NO resize)
+                sal = saliency.float()          # shape [1,1,Hs,Ws] e.g. 31x51
+                sal = sal[0, 0]                 # -> [Hs, Ws]
+                # normalize to [0,1]
+                sal = (sal - sal.min()) / (sal.max() - sal.min() + 1e-8)
+                sal_pil = transforms.ToPILImage()(sal.unsqueeze(0).cpu())  # 1xHs×Ws grayscale
+                sal_pil.save(output_path.with_name(output_path.stem + "_saliency.png"))
+                
+                # (2) relight
+                output_image = model(warped, args.prompt)
+                # print(f"📊 relit tensor range:  min={output_image.min().item():.3f}, max={output_image.max().item():.3f}")
 
-            # (3) save warped+relit
-            warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
-            warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
-            warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
+                # (3) save warped+relit
+                warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
+                warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
+                warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
 
-            # (4) unwarp back
-            output_image = apply_unwarp(warp_grid, output_image, args.separable)
+                # (4) unwarp back
+                output_image = apply_unwarp(warp_grid, output_image, args.separable)
         else:
             output_image = model(c_t, args.prompt)
 

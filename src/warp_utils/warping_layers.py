@@ -243,7 +243,8 @@ class PlainKDEGrid(nn.Module, RecasensSaliencyToGridMixin):
             grid = self.nonseparable_saliency_to_grid(imgs,
                                                       saliency, device)
 
-        return grid
+        return grid, saliency
+        # return grid
 
 class FixedKDEGrid(nn.Module, RecasensSaliencyToGridMixin):
     """Grid generator that uses a fixed saliency map -- KDE SD"""
@@ -266,6 +267,51 @@ class FixedKDEGrid(nn.Module, RecasensSaliencyToGridMixin):
         else:
             grid = self.nonseparable_saliency_to_grid(imgs,
                                                       self.saliency, device)
+
+        return grid
+
+
+class SaliencyKDEGrid(nn.Module, RecasensSaliencyToGridMixin):
+    """
+    Same grid generator, but takes a dense saliency map directly
+    instead of bboxes.
+    """
+    def __init__(self, **kwargs):
+        super().__init__()
+        RecasensSaliencyToGridMixin.__init__(self, **kwargs)
+        self.input_shape = kwargs.get("input_shape", (1080, 1920))
+
+    def forward(self, imgs, saliency, **kwargs):
+        """
+        imgs: [B, C, H, W]
+        saliency: [B, 1, Hs, Ws] OR [B, Hs, Ws]
+                  (we will resize to grid_shape internally)
+        returns: grid compatible with warp()
+        """
+        device = imgs.device
+        B, _, H, W = imgs.shape
+        h_out, w_out = self.grid_shape  # target saliency resolution used by mixin
+
+        # normalize shape to [B,1,*,*]
+        if saliency.dim() == 3:
+            saliency = saliency.unsqueeze(1)
+        saliency = saliency.to(device).float()
+
+        # resize saliency to (h_out,w_out) expected by saliency_to_grid
+        saliency = torch.nn.functional.interpolate(
+            saliency, size=(h_out, w_out), mode="bilinear", align_corners=False
+        )
+
+        # make it a proper distribution like bbox2sal does (sum to 1)
+        saliency = saliency.clamp_min(0)
+        saliency = saliency / (saliency.sum(dim=(2, 3), keepdim=True) + 1e-8)
+
+        if self.separable:
+            x_saliency = saliency.sum(dim=2)  # [B,1,w_out]
+            y_saliency = saliency.sum(dim=3)  # [B,1,h_out]
+            grid = self.separable_saliency_to_grid(imgs, x_saliency, y_saliency, device)
+        else:
+            grid = self.nonseparable_saliency_to_grid(imgs, saliency, device)
 
         return grid
 
