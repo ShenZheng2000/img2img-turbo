@@ -110,7 +110,7 @@ relight_type=golden_sunlight_1
 # run_inference "exp_1_1_warped_128_eyes/${relight_type}" "VITON/test"
 # run_inference "exp_1_1/${relight_type}" "VITON/test"
 
-# run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "VITON/test"
+run_inference "exp_1_10_1_warped_128_eyes/${relight_type}" "VITON/test"
 # run_inference "exp_1_10_1/${relight_type}" "VITON/test"
 
 # run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "VITON/test"
@@ -137,4 +137,4 @@ relight_type=golden_sunlight_1
 
 # run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"
 
-run_inference "exp_1_1_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"
+# run_inference "exp_1_1_warped_128_eyes/${relight_type}" "street_tryon/validation_big_sample_100"

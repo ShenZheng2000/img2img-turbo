@@ -4,14 +4,16 @@
 # target_prefix="cityscapes_to_dense_fog"
 # target_prefix="cityscapes_to_acdc_fog"
 # target_prefix="BDD100K_day2night"
-target_prefix="BDD100K_clear2rainy"
+# target_prefix="BDD100K_clear2rainy"
+target_prefix="cityscapes_to_acdc_rain"
 
-# TODO: think about warp to resize or not at all? can use this one --out-h 286 --out-w 286
 # NOTE: use bw 128 for now.
+# NOTE: must use train json to warp, and check debug vis bbox to make sure warping works! 
 python warp_dataset.py \
   --input_root /ssd0/shenzhen/Datasets/driving \
   --target_prefix $target_prefix \
   --bw 128 \
   --warp-subfolders train_A train_B \
   --bbox-json \
-  /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_train_coco.json
+  /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_train_poly.json \
+  /ssd0/shenzhen/Datasets/driving/acdc/gt_detection/instancesonly_train_gt_detection.json

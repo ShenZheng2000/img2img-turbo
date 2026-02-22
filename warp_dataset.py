@@ -6,7 +6,6 @@ import argparse
 from PIL import Image
 from tqdm import tqdm
 
-# TODO: use a simple json instead of coco json to get gt bboxes. 
 
 # ✅ warp utils
 from src.warp_utils.warp_pipeline import get_face_app, detect_face_bbox, get_gt_bbox, visualize_bbox, load_bbox_map, apply_forward_warp

@@ -6,6 +6,7 @@ CS_DAY_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_dark_zurich/test_A
 DZ_NIGHT_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_dark_zurich/test_B
 ACDC_FOG_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B
 DENSE_FOG_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog/test_B
+ACDC_RAIN_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain/test_B
 
 run_fidelity_unwarp() {
   GPU="$1"
@@ -64,6 +65,29 @@ run_fidelity_unwarp() {
     '
 }
 
+
+# # # # cityscapes_to_acdc_rain
+# echo "=====================>Evaluating cityscapes_to_acdc_rain..."
+# run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_A "$ACDC_RAIN_DIR"
+# run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
+
+# # # cityscapes_to_acdc_rain_warped_128
+echo "=====================>Evaluating cityscapes_to_acdc_rain_warped_128..."
+run_fidelity_unwarp 2 output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_A "$ACDC_RAIN_DIR"
+run_fidelity_unwarp 2 output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
+
+
+# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
+# echo "=====================>Evaluating BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip..."
+# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_A "$BDD_RAINY_DIR"
+# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_B "$BDD_DAY_DIR"
+
+# # BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip
+# echo "=====================>Evaluating BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip..."
+# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/result_A "$BDD_RAINY_DIR"
+# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$BDD_DAY_DIR"
+
+
 # # BDD100K_day2night_resize_286_randomcrop_256x256_hflip
 # echo "=====================>Evaluating BDD100K_day2night_resize_286_randomcrop_256x256_hflip..."
 # run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_day2night_resize_286_randomcrop_256x256_hflip/result_A "$BDD_NIGHT_DIR"
@@ -73,15 +97,6 @@ run_fidelity_unwarp() {
 # echo "=====================>Evaluating BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip..."
 # run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/result_A "$BDD_NIGHT_DIR"
 # run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_day2night_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$BDD_DAY_DIR"
-
-
-
-# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
-# echo "=====================>Evaluating BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip..."
-# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_A "$BDD_RAINY_DIR"
-# run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_B "$BDD_DAY_DIR"
-
-# # TODO: BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip (wait training to finish!)
 
 
 # # # cityscapes_to_dark_zurich
@@ -95,7 +110,6 @@ run_fidelity_unwarp() {
 # run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
 
 
-
 # # # # cityscapes_to_dense_fog
 # echo "=====================>Evaluating cityscapes_to_dense_fog..."
 # run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_dense_fog_resize_286_randomcrop_256x256_hflip/result_A "$DENSE_FOG_DIR"
@@ -106,12 +120,10 @@ run_fidelity_unwarp() {
 # run_fidelity_unwarp 2 output/cyclegan_turbo/cityscapes_to_dense_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_A "$DENSE_FOG_DIR"
 # run_fidelity_unwarp 2 output/cyclegan_turbo/cityscapes_to_dense_fog_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
 
-
-
-# # # cityscapes_to_acdc_fog
-echo "=====================>Evaluating cityscapes_to_acdc_fog..."
-run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_A "$ACDC_FOG_DIR"
-run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
+# # # # cityscapes_to_acdc_fog
+# echo "=====================>Evaluating cityscapes_to_acdc_fog..."
+# run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_A "$ACDC_FOG_DIR"
+# run_fidelity_unwarp 1 output/cyclegan_turbo/cityscapes_to_acdc_fog_resize_286_randomcrop_256x256_hflip/result_B "$CS_DAY_DIR"
 
 # # # # cityscapes_to_acdc_fog_warped_128
 # echo "=====================>Evaluating cityscapes_to_acdc_fog_warped_128..."

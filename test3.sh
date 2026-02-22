@@ -1,20 +1,83 @@
-# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
-CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
-    --prompt "driving in heavy rain" \
-    --direction "a2b" \
-    --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
-    --image_prep "no_resize" \
-    --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_A" \
-    --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_A"
+# # cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip (a2b)
+# python src/inference_unpaired_folder.py \
+#  --prompt "driving in heavy rain" \
+#  --direction "a2b" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain_warped_128/test_A" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_A" \
+#  --bw 128 \
+#  --bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json
 
-# # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
-CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
-    --prompt "driving in the day" \
-    --direction "b2a" \
-    --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
-    --image_prep "no_resize" \
-    --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_B" \
-    --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_B"
+# # cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip (b2a)
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#  --prompt "driving in the day" \
+#  --direction "b2a" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain_warped_128/test_B" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_B" \
+#  --bw 128 \
+#  --bbox-json /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json
+
+# # cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip (a2b)
+# python src/inference_unpaired_folder.py \
+#  --prompt "driving in heavy rain" \
+#  --direction "a2b" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain/test_A" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_A"
+
+# # cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip (b2a)
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#  --prompt "driving in the day" \
+#  --direction "b2a" \
+#  --model_path "output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#  --image_prep "no_resize" \
+#  --input_dir "/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain/test_B" \
+#  --output_dir "output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_B"
+
+
+# # # BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#     --prompt "driving in heavy rain" \
+#     --direction "a2b" \
+#     --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_A" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/result_A" \
+#     --bw 128 \
+#     --bbox-json /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_val_coco.json
+
+# # # BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_B" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/result_B" \
+#     --bw 128 \
+#     --bbox-json /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_val_coco.json
+
+# # # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=1 python src/inference_unpaired_folder.py \
+#     --prompt "driving in heavy rain" \
+#     --direction "a2b" \
+#     --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_A" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_A"
+
+# # # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip
+# CUDA_VISIBLE_DEVICES=2 python src/inference_unpaired_folder.py \
+#     --prompt "driving in the day" \
+#     --direction "b2a" \
+#     --model_path "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/checkpoints/model_25001.pkl" \
+#     --image_prep "no_resize" \
+#     --input_dir "/ssd0/shenzhen/Datasets/driving/BDD100K_clear2rainy/test_B" \
+#     --output_dir "output/cyclegan_turbo/BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip/result_B"
 
 
 # # # BDD100K_day2night_resize_286_randomcrop_256x256_hflip
