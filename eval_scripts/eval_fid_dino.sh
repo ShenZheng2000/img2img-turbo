@@ -8,15 +8,16 @@ ACDC_FOG_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_fog/test_B
 DENSE_FOG_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog/test_B
 ACDC_RAIN_DIR=/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain/test_B
 
+
 run_cleanfid_dino() {
   GPU="$1"
   REAL_A="$2"
   REAL_B="$3"
-  RES_A="$4"   # result_A folder
-  RES_B="$5"   # result_B folder
+  RES_A="$4"
+  RES_B="$5"
 
   CUDA_VISIBLE_DEVICES="$GPU" \
-  python eval_fid_dino.py \
+  python "eval_scripts/eval_fid_dino.py" \
     --real_A "$REAL_A" \
     --real_B "$REAL_B" \
     --result_A "$RES_A" \
@@ -34,11 +35,11 @@ run_cleanfid_dino() {
 #   output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_A \
 #   output/cyclegan_turbo/cityscapes_to_acdc_rain_resize_286_randomcrop_256x256_hflip/result_B
 
-# cityscapes_to_acdc_rain_warped_128
-echo "=====================>Evaluating cityscapes_to_acdc_rain_warped_128..."
-run_cleanfid_dino 1 "$CS_DAY_DIR" "$ACDC_RAIN_DIR" \
-  output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
-  output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_B
+# # cityscapes_to_acdc_rain_warped_128
+# echo "=====================>Evaluating cityscapes_to_acdc_rain_warped_128..."
+# run_cleanfid_dino 1 "$CS_DAY_DIR" "$ACDC_RAIN_DIR" \
+#   output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
+#   output/cyclegan_turbo/cityscapes_to_acdc_rain_warped_128_resize_286_randomcrop_256x256_hflip/result_B
 
 
 # # BDD100K_clear2rainy_resize_286_randomcrop_256x256_hflip

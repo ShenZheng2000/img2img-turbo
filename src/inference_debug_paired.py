@@ -1,89 +1,69 @@
-# import argparse
-# from pathlib import Path
-# from PIL import Image
-# import torch
-# from torchvision import transforms
-# import torchvision.transforms.functional as F
 
-# '''
-# Example Usage:
-# python src/inference_debug_paired.py \
-#     --warp_src /home/shenzhen/Datasets/VITON/test/image/00055_00.jpg \
-#     --unwarp_src "/home/shenzhen/Relight_Projects/img2img-turbo/data/ChatGPT Image Feb 11, 2026, 09_21_46 PM.png" \
-#     --out output/debug_gpt52.png \
-#     --bw 128 \
-#     --include-eyes
-# '''
+from email import parser
+import os
+import argparse
+from pathlib import Path
+from PIL import Image, ImageOps
+import torch
+from torchvision import transforms
+import torchvision.transforms.functional as F
+from tqdm import tqdm
 
-# from warp_utils.warp_pipeline import (
-#     detect_face_bbox,
-#     apply_forward_warp,
-#     apply_unwarp,
-#     get_face_app,
-# )
+from pix2pix_turbo import Pix2Pix_Turbo
+from warp_utils.warp_pipeline import apply_forward_warp, resize_longest_side, crop_to_foreground
 
-# def load_as_tensor(pil_img: Image.Image, target_size: int, use_fp16: bool):
-#     # Resize to square like your original pipeline
-#     pil_img = pil_img.resize((target_size, target_size), Image.LANCZOS)
-#     t = F.to_tensor(pil_img).unsqueeze(0).cuda()  # [1,3,H,W], in [0,1]
-#     if use_fp16:
-#         t = t.half()
-#     return t
+# NOTE: try to simulate instance-warp, NOT our warp!
 
-# @torch.no_grad()
-# def main():
-#     ap = argparse.ArgumentParser()
-#     ap.add_argument("--warp_src", type=str, required=True, help="Image used to COMPUTE warp grid (face bbox etc.)")
-#     ap.add_argument("--unwarp_src", type=str, required=True, help="Image to be UNWARPED using that grid")
-#     ap.add_argument("--out", type=str, required=True, help="Output path for unwarped image")
-#     ap.add_argument("--target_size", type=int, default=784)
-#     ap.add_argument("--bw", type=int, default=80, help="Same bw you used before (must be >0 to create grid)")
-#     ap.add_argument("--use_fp16", action="store_true")
-#     ap.add_argument(
-#         "--no-separable",
-#         action="store_false",
-#         dest="separable",
-#         help="Disable separable KDE grid (default: True)",
-#     )
-#     ap.add_argument("--include-eyes", action="store_true")
-#     ap.set_defaults(separable=True)
-#     args = ap.parse_args()
+# =====================
+# CONFIG
+# =====================
+INPUT_PATH = Path("/home/shenzhen/Datasets/VITON/test/image/00055_00.jpg")
+OUT_DIR = Path("debug")
+TARGET_SIZE = 784
+BW = 128
+SEPARABLE = True
+USE_FP16 = False
 
-#     device = torch.device("cuda")
+OUT_DIR.mkdir(exist_ok=True)
 
-#     face_app = get_face_app()
 
-#     # -------------------------
-#     # A) Compute warp grid from warp_src
-#     # -------------------------
-#     img1 = Image.open(args.warp_src).convert("RGB")
-#     t1 = load_as_tensor(img1, args.target_size, args.use_fp16)
+def process_image(input_path):
+    img, cropped_size = crop_to_foreground(input_path)
 
-#     bbox = detect_face_bbox(img1, face_app, include_eyes=args.include_eyes)  # expects PIL image
-#     bbox = bbox.to(device)
+    img = img.resize((TARGET_SIZE, TARGET_SIZE), Image.LANCZOS)
 
-#     # We discard "warped", keep "warp_grid"
-#     warped, warp_grid = apply_forward_warp(t1, bbox, args.bw, args.separable)
-#     _, _, H, W = warped.shape
+    c_t = F.to_tensor(img).unsqueeze(0).cuda()
+    if USE_FP16:
+        c_t = c_t.half()
 
-#     # -------------------------
-#     # B) Unwarp a second image using warp_grid
-#     # -------------------------
-#     img2 = Image.open(args.unwarp_src).convert("RGB")
-#     img2 = img2.resize((W, H), Image.LANCZOS)   # resize to warped size
-#     t2 = F.to_tensor(img2).unsqueeze(0).cuda()
-#     if args.use_fp16:
-#         t2 = t2.half()
+    output_path = OUT_DIR / input_path.name
 
-#     # apply_unwarp expects a tensor in the same normalized space as your pipeline.
-#     # If your images are in [0,1], that's fine; unwarp will just remap pixels.
-#     out_t = apply_unwarp(warp_grid, t2, args.separable)
+    with torch.no_grad():
+        if BW > 0:
+            # FULL IMAGE bbox
+            bbox = torch.tensor(
+                [[0, 0, TARGET_SIZE - 1, TARGET_SIZE - 1]],
+                dtype=torch.float32,
+                device=c_t.device,
+            )
 
-#     # Save
-#     out_img = transforms.ToPILImage()(out_t[0].float().cpu().clamp(0, 1))
-#     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-#     out_img.save(args.out)
-#     print(f"✅ saved: {args.out}")
+            warped, warp_grid, saliency = apply_forward_warp(
+                c_t, bbox, BW, SEPARABLE
+            )
 
-# if __name__ == "__main__":
-#     main()
+            # save warped
+            warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
+            warped_pil = resize_longest_side(warped_pil, cropped_size, TARGET_SIZE)
+            warped_pil.save(OUT_DIR / f"{input_path.stem}_instance_warp.png")
+
+            # save saliency
+            sal = saliency.float()[0, 0]
+            sal = (sal - sal.min()) / (sal.max() - sal.min() + 1e-8)
+            sal_pil = transforms.ToPILImage()(sal.unsqueeze(0).cpu())
+            sal_pil.save(OUT_DIR / f"{input_path.stem}git.png")
+
+            print(f"✅ Saved to {OUT_DIR}")
+
+
+if __name__ == "__main__":
+    process_image(INPUT_PATH)
