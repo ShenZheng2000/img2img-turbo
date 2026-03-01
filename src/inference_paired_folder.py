@@ -1,4 +1,3 @@
-from email import parser
 import os
 import argparse
 from pathlib import Path
@@ -9,8 +8,15 @@ import torchvision.transforms.functional as F
 from tqdm import tqdm
 
 from pix2pix_turbo import Pix2Pix_Turbo
-from warp_utils.warp_pipeline import detect_face_bbox, apply_forward_warp, apply_unwarp, get_face_app, resize_longest_side, crop_to_foreground
-
+from warp_utils.warp_pipeline import (
+    detect_face_bbox,
+    apply_forward_warp,
+    apply_unwarp,
+    get_face_app,
+    resize_longest_side,
+    crop_to_foreground,
+    center_crop_pil,
+)
 
 # ============================================================
 # Helper: parse arguments
@@ -36,6 +42,8 @@ def parse_args():
         action="store_true",
         help="If set, include left/right eye boxes in face detection"
     )
+    parser.add_argument('--center_crop', action='store_true',
+                    help='If set, center-crop (or resize-up then crop) to target_size x target_size, instead of crop_to_foreground.')
     parser.set_defaults(separable=True)
     args = parser.parse_args()
 
@@ -51,9 +59,16 @@ def parse_args():
 # Main processing for one image
 # ============================================================
 def process_image(input_path, model, face_app, args):
-    img, cropped_size = crop_to_foreground(input_path)
+    # img, cropped_size = crop_to_foreground(input_path)
+    # img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
 
-    img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
+    if args.center_crop:
+        img = Image.open(input_path).convert("RGB")
+        img = center_crop_pil(img, args.target_size, args.target_size)
+        cropped_size = (args.target_size, args.target_size)
+    else:
+        img, cropped_size = crop_to_foreground(input_path)
+        img = img.resize((args.target_size, args.target_size), Image.LANCZOS)    
 
     c_t = F.to_tensor(img).unsqueeze(0).cuda()
     if args.use_fp16:

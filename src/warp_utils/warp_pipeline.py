@@ -262,6 +262,19 @@ def crop_to_foreground(input_path):
     return img, img.size
 
 
+def center_crop_pil(img: Image.Image, target_w: int, target_h: int) -> Image.Image:
+    w, h = img.size
+    if w < target_w or h < target_h:
+        scale = max(target_w / w, target_h / h)
+        new_w = int(round(w * scale))
+        new_h = int(round(h * scale))
+        img = img.resize((new_w, new_h), Image.BICUBIC)
+        w, h = img.size
+    left = (w - target_w) // 2
+    top = (h - target_h) // 2
+    return img.crop((left, top, left + target_w, top + target_h))
+
+
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)
 # ===============================================================

@@ -17,7 +17,7 @@ run_cleanfid_dino() {
   RES_B="$5"
 
   CUDA_VISIBLE_DEVICES="$GPU" \
-  python "eval_scripts/eval_fid_dino.py" \
+  python -m eval_scripts.eval_fid_dino \
     --real_A "$REAL_A" \
     --real_B "$REAL_B" \
     --result_A "$RES_A" \
@@ -72,15 +72,15 @@ run_cleanfid_dino() {
 
 # cityscapes_to_dark_zurich
 # echo "=====================>Evaluating cityscapes_to_dark_zurich..."
-# run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
-#   output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_A \
-#   output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_B
+run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
+  output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_A \
+  output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_B
 
 # cityscapes_to_dark_zurich_warped_128
 # echo "=====================>Evaluating cityscapes_to_dark_zurich_warped_128..."
-# run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
-#   output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
-#   output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_B
+run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
+  output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
+  output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_B
 
 # # cityscapes_to_acdc_fog
 # echo "=====================>Evaluating cityscapes_to_acdc_fog..."

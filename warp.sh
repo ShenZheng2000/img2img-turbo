@@ -1,6 +1,6 @@
 input_root="/ssd0/shenzhen/Datasets/relighting"
 target_prefix="exp_1_10_1"
-relight_type="foggy_1"
+relight_type="golden_sunlight_1"
 bw=128
 
 CUDA_VISIBLE_DEVIVCES=7 python warp_dataset.py \

@@ -28,6 +28,12 @@ run_inference() {
         echo "Detected: include-eyes = True"
     fi
 
+    CENTER_CROP_FLAG=""
+    if [[ "$EXP" == *"drive"* ]]; then
+        CENTER_CROP_FLAG="--center_crop"
+        echo "Detected: center_crop = True (driving experiment)"
+    fi
+
     # -------------------------------
     # Auto-detect lighting prompt
     # -------------------------------
@@ -55,7 +61,9 @@ run_inference() {
     # -------------------------------
     CKPT_DIR="output/pix2pix_turbo/${EXP}/checkpoints"
     MODEL_PATH=$(ls -1 ${CKPT_DIR}/model_*.pkl | sort -V | tail -n 1)
-    INPUT_DIR="/home/shenzhen/Datasets/${DATASET}"
+
+    # NOTE: hardcode to disk place now, change later! 
+    INPUT_DIR="/ssd0/shenzhen/Datasets/${DATASET}"
     OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}/image"
 
     mkdir -p "$OUT_DIR"
@@ -71,42 +79,50 @@ run_inference() {
         --prompt "$PROMPT" \
         --output_dir "$OUT_DIR" \
         --bw "$BW" \
-        $EYE_FLAG
+        $EYE_FLAG \
+        $CENTER_CROP_FLAG
 }
+
+
+# # =====================================
+# # roadwork driving images
+# # =====================================
+# run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston"
+run_inference "2_24_drive_v2/foggy_1" "depth/workzone_segm/boston"
 
 # # =====================================
 # # VITON/test
 # # =====================================
-# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "VITON/test" 4
-# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "VITON/test" 5
-# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "VITON/test" 6
-# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "VITON/test"  4
+# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "VITON/test"
+# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "VITON/test"
+# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "VITON/test"
+# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "VITON/test" 
 
-# run_inference "exp_1_10_1/golden_sunlight_1" "VITON/test"  5
+# run_inference "exp_1_10_1/golden_sunlight_1" "VITON/test"
 # run_inference "exp_1_10_1/moonlight_1" "VITON/test" 6
-# run_inference "exp_1_10_1/foggy_1" "VITON/test"  7
-# run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test" 4
+# run_inference "exp_1_10_1/foggy_1" "VITON/test"
+# run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test"
 
-# run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "VITON/test" 5
-# run_inference "exp_1_1_warped_128_eyes/moonlight_1" "VITON/test" 6
-# run_inference "exp_1_1_warped_128_eyes/foggy_1" "VITON/test" 7
-# run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "VITON/test" 5
+# run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "VITON/test"
+# run_inference "exp_1_1_warped_128_eyes/moonlight_1" "VITON/test"
+# run_inference "exp_1_1_warped_128_eyes/foggy_1" "VITON/test"
+# run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "VITON/test"
 
 
 # # # =====================================
 # # # street_tryon/validation
 # # # =====================================
-# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation" 0
-# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "street_tryon/validation" 1
-# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "street_tryon/validation" 2
-# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "street_tryon/validation" 0
+# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation"
+# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "street_tryon/validation"
+# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "street_tryon/validation"
+# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "street_tryon/validation"
 
-# run_inference "exp_1_10_1/golden_sunlight_1" "street_tryon/validation" 1
-# run_inference "exp_1_10_1/moonlight_1" "street_tryon/validation" 2
-# run_inference "exp_1_10_1/foggy_1" "street_tryon/validation" 3
-# run_inference "exp_1_10_1/noon_sunlight_1" "street_tryon/validation" 0
+# run_inference "exp_1_10_1/golden_sunlight_1" "street_tryon/validation"
+# run_inference "exp_1_10_1/moonlight_1" "street_tryon/validation"
+# run_inference "exp_1_10_1/foggy_1" "street_tryon/validation"
+# run_inference "exp_1_10_1/noon_sunlight_1" "street_tryon/validation"
 
-# run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation" 1
-# run_inference "exp_1_1_warped_128_eyes/moonlight_1" "street_tryon/validation" 2
-# run_inference "exp_1_1_warped_128_eyes/foggy_1" "street_tryon/validation" 3
-# run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "street_tryon/validation" 4
+# run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "street_tryon/validation"
+# run_inference "exp_1_1_warped_128_eyes/moonlight_1" "street_tryon/validation"
+# run_inference "exp_1_1_warped_128_eyes/foggy_1" "street_tryon/validation"
+# run_inference "exp_1_1_warped_128_eyes/noon_sunlight_1" "street_tryon/validation"

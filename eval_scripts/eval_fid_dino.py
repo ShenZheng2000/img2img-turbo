@@ -61,10 +61,11 @@ def compute_dino_struct(src_dir: str, gen_dir: str, gen_suffix: str = None, max_
             src_pil = src_pil.resize((resize, resize), Image.BICUBIC)
             gen_pil = gen_pil.resize((resize, resize), Image.BICUBIC)
 
-        a = net_dino.preprocess(src_pil).unsqueeze(0).cuda()
-        b = net_dino.preprocess(gen_pil).unsqueeze(0).cuda()
+        with torch.no_grad():
+            a = net_dino.preprocess(src_pil).unsqueeze(0).cuda()
+            b = net_dino.preprocess(gen_pil).unsqueeze(0).cuda()
+            s = net_dino.calculate_global_ssim_loss(a, b).item()
 
-        s = net_dino.calculate_global_ssim_loss(a, b).item()
         scores.append(s)
 
     return float(np.mean(scores)), float(np.std(scores)), n
