@@ -1,3 +1,4 @@
+*.pt
 debug/
 pretrained/
 debug_pairs.py

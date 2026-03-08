@@ -5,10 +5,21 @@ import torch
 import argparse
 from PIL import Image
 from tqdm import tqdm
-
+from ultralytics import YOLOWorld
 
 # ✅ warp utils
-from src.warp_utils.warp_pipeline import get_face_app, detect_face_bbox, get_gt_bbox, visualize_bbox, load_bbox_map, apply_forward_warp
+from src.warp_utils.warp_pipeline import (
+                                        get_face_app, 
+                                        detect_face_bbox, 
+                                        get_gt_bbox, 
+                                        visualize_bbox, 
+                                        load_bbox_map, 
+                                        apply_forward_warp,
+                                        save_identity_inv_for_image,
+                                        custom_classes,
+                                        detect_yolo_bbox
+)
+
 from src.warp_utils.warping_layers import invert_grid, save_img_warp, load_img_warp
 
 # ============================================================
@@ -18,7 +29,7 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--target_prefix", type=str, required=True)
     p.add_argument("--relight_type", type=str, default=None)
-    p.add_argument("--bw", type=int, default=512)
+    p.add_argument("--bw", type=int, default=128)
     p.add_argument("--no-separable", action="store_false", dest="separable")
     p.add_argument("--include-eyes", action="store_true")
     p.add_argument("--input_root", type=str, default="/home/shenzhen/Datasets/relighting")
@@ -32,6 +43,9 @@ def parse_args():
 
     p.add_argument("--out-h", type=int, default=None)
     p.add_argument("--out-w", type=int, default=None)
+
+    p.add_argument("--use-yoloworld", action="store_true",
+                help="Use YOLO-World to detect bbox on-the-fly (no bbox json needed).")
 
     p.set_defaults(separable=True)
     return p.parse_args()
@@ -67,7 +81,14 @@ class WarpDatasetPipeline:
         # --------------- bbox mode ----------------
         # self.bbox_map = load_bbox_map(args.train_bbox_json, args.val_bbox_json)
         self.bbox_map = load_bbox_map(args.bbox_json)
-        if self.bbox_map is not None:
+
+        if args.use_yoloworld:
+            self.bbox_map = None
+            self.face_app = None
+            self.yolo_model = YOLOWorld("yolov8x-world.pt") # NOTE: use a larger model for better detection (especially small faces)
+            self.yolo_model.set_classes(custom_classes)  # hardcoded
+            print("✅ Using YOLO-World bbox detector. GT bbox-json and face detector disabled.")
+        elif self.bbox_map is not None:
             self.face_app = None
             print("✅ Using merged GT bounding boxes (train + val). Face detector disabled.")
         else:
@@ -78,6 +99,7 @@ class WarpDatasetPipeline:
         print(f"📂 input_root  = {self.input_root}")
         print(f"📂 output_root = {self.output_root}")
 
+
     # --------------------------------------------------------
     def process_image(self, img_path, warped_dir):
         img_pil = Image.open(img_path).convert("RGB")
@@ -85,12 +107,26 @@ class WarpDatasetPipeline:
         base = os.path.basename(img_path)
 
         # --- bbox source ---
-        if self.bbox_map is not None:  # GT-only mode (no detector)
+        if hasattr(self, "yolo_model") and self.yolo_model is not None:
+            bbox = detect_yolo_bbox(img_pil, self.yolo_model)
+            if bbox is None:
+                print("⚠️  No bbox detected by YOLO-World for image:", img_path)
+                shutil.copy2(img_path, os.path.join(warped_dir, base))
+                save_identity_inv_for_image(c_t, base, warped_dir)   # <-- NEW (one line)
+                return None
+
+        elif self.bbox_map is not None:  # GT-only mode (no detector)
             # bbox = self.get_gt_bbox(base, img_pil)
             bbox = get_gt_bbox(base, img_pil, self.bbox_map, device=self.device)
         else:
             # detector mode
-            bbox = detect_face_bbox(img_pil, self.face_app, include_eyes=self.args.include_eyes).to(self.device)
+            bbox = detect_face_bbox(img_pil, self.face_app, include_eyes=self.args.include_eyes)
+            if bbox is None:
+                print("⚠️  No face bbox detected for image:", img_path)
+                shutil.copy2(img_path, os.path.join(warped_dir, base))
+                save_identity_inv_for_image(c_t, base, warped_dir)   # <-- NEW (one line)
+                return None
+            bbox = bbox.to(self.device)
 
         # --- visualize bbox ---
         # self.visualize_bbox(img_pil, bbox, base)
@@ -103,7 +139,7 @@ class WarpDatasetPipeline:
         else:
             output_shape = None
 
-        warped_img, warp_grid = apply_forward_warp(
+        warped_img, warp_grid, _ = apply_forward_warp(
             c_t, 
             bbox, 
             self.bandwidth_scale, 

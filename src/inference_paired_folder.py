@@ -16,7 +16,12 @@ from warp_utils.warp_pipeline import (
     resize_longest_side,
     crop_to_foreground,
     center_crop_pil,
+    custom_classes,
+    detect_yolo_bbox,
+    largest_divisible_by_32_leq
 )
+
+from ultralytics import YOLOWorld
 
 # ============================================================
 # Helper: parse arguments
@@ -44,6 +49,18 @@ def parse_args():
     )
     parser.add_argument('--center_crop', action='store_true',
                     help='If set, center-crop (or resize-up then crop) to target_size x target_size, instead of crop_to_foreground.')
+    parser.add_argument(
+        "--use-yoloworld",
+        action="store_true",
+        help="Use YOLO-World to detect bbox on-the-fly (no face_app bbox)."
+    )    
+    parser.add_argument(
+        '--crop_resize_size',
+        type=int,
+        default=None,
+        help='If set, after center crop to target_size, resize to this size for model inference.'
+    )
+
     parser.set_defaults(separable=True)
     args = parser.parse_args()
 
@@ -58,14 +75,24 @@ def parse_args():
 # ============================================================
 # Main processing for one image
 # ============================================================
-def process_image(input_path, model, face_app, args):
+def process_image(input_path, model, face_app, yolo_model, args):
     # img, cropped_size = crop_to_foreground(input_path)
     # img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
 
     if args.center_crop:
         img = Image.open(input_path).convert("RGB")
+
+        # (1) center crop
         img = center_crop_pil(img, args.target_size, args.target_size)
         cropped_size = (args.target_size, args.target_size)
+
+        # (2) resize here ONLY for no-warp inference
+        if args.bw == 0:
+            if (args.crop_resize_size is not None) and (args.crop_resize_size != args.target_size):
+                img = img.resize(
+                    (args.crop_resize_size, args.crop_resize_size),
+                    Image.LANCZOS
+                )
     else:
         img, cropped_size = crop_to_foreground(input_path)
         img = img.resize((args.target_size, args.target_size), Image.LANCZOS)    
@@ -85,11 +112,31 @@ def process_image(input_path, model, face_app, args):
         if args.bw > 0:
 
             # (0) get bbox and apply forward warp
-            bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
+            if args.use_yoloworld and yolo_model is not None:
+                w, h = img.size
+                imgsz = largest_divisible_by_32_leq(min(h, w))
+                bbox = detect_yolo_bbox(img, yolo_model, imgsz=imgsz)
+            else:
+                bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
+
             if bbox is None:
                 output_image = model(c_t, args.prompt)
             else:
-                warped, warp_grid, saliency = apply_forward_warp(c_t, bbox.to(c_t.device), args.bw, args.separable)
+                
+                # TODO: now hardcode crop_resize as warp_output_shape. change later
+                # warp-resize instead of just warp
+                if args.crop_resize_size is not None:
+                    warp_output_shape = (args.crop_resize_size, args.crop_resize_size)
+                else:
+                    warp_output_shape = None
+
+                warped, warp_grid, saliency = apply_forward_warp(
+                    c_t,
+                    bbox.to(c_t.device),
+                    args.bw,
+                    args.separable,
+                    output_shape=warp_output_shape
+                )
 
                 # (1) save warped image
                 # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
@@ -141,6 +188,11 @@ def main():
 
     face_app = get_face_app()
 
+    yolo_model = None
+    if args.use_yoloworld:
+        yolo_model = YOLOWorld("yolov8x-world.pt")
+        yolo_model.set_classes(custom_classes)
+
     input_root = Path(args.input_dir)
     subfolders = sorted([p for p in input_root.iterdir() if p.is_dir()])
 
@@ -181,7 +233,7 @@ def main():
         raise RuntimeError("❌ No images found to process.")
 
     for input_path in tqdm(img_list, desc="Processing"):
-        process_image(input_path, model, face_app, args)
+        process_image(input_path, model, face_app, yolo_model, args)
 
 
 if __name__ == "__main__":

@@ -5,9 +5,14 @@
 # ===============================================================
 
 run_inference() {
-    EXP="$1"        # e.g. exp_10_16_warped_128_eyes/candlelight_1
-    DATASET="$2"    # e.g. dataset_with_garment_bigface_100
-    GPU_ID="${3:-0}"  # e.g. 0, 1, 2... (Defaults to 0 if not provided)
+    EXP="$1"
+    DATASET="$2"
+    GPU_ID="${3:-0}"
+
+    # NEW: optional crop_resize_size (e.g. 512). Default: empty = do nothing.
+    CROP_RESIZE_SIZE="${4:-}"
+
+    TARGET_SIZE="${5:-784}"
 
     # -------------------------------
     # Auto-detect bandwidth (BW)
@@ -35,20 +40,50 @@ run_inference() {
     fi
 
     # -------------------------------
+    # Auto-detect YOLOWorld usage
+    # -------------------------------
+    YOLO_FLAG=""
+    if [[ "$EXP" == *"drive"* && "$EXP" == *"warped"* ]]; then
+        YOLO_FLAG="--use-yoloworld"
+        echo "Detected: use_yoloworld = True (drive + warped)"
+    fi
+
+    # -------------------------------
+    # NEW: crop_resize flag + OUT_DIR suffix
+    # -------------------------------
+    CROP_RESIZE_FLAG=""
+    OUT_SUFFIX=""
+    if [[ -n "$CROP_RESIZE_SIZE" ]]; then
+        CROP_RESIZE_FLAG="--crop_resize_size $CROP_RESIZE_SIZE"
+        OUT_SUFFIX="_cr${CROP_RESIZE_SIZE}"
+        echo "Detected: crop_resize_size = $CROP_RESIZE_SIZE"
+    fi
+
+
+    # -------------------------------
+    # target_size flag + optional OUT_DIR suffix
+    # -------------------------------
+    TARGET_FLAG="--target_size $TARGET_SIZE"
+
+    # Only append suffix if user explicitly passed arg5
+    if [[ -n "$5" ]]; then
+        OUT_SUFFIX="${OUT_SUFFIX}_ts${TARGET_SIZE}"
+        echo "Detected: target_size override = $TARGET_SIZE"
+    else
+        echo "Using default target_size = 784"
+    fi
+
+    # -------------------------------
     # Auto-detect lighting prompt
     # -------------------------------
     if [[ "$EXP" == *"noon_sunlight_1"* ]]; then
         PROMPT="Relit with bright noon sunlight in a clear outdoor setting, casting soft natural shadows and surrounding the subject in crisp white light to create a clean, vibrant daytime mood."
-
     elif [[ "$EXP" == *"golden_sunlight_1"* ]]; then
         PROMPT="Relit with warm golden sunlight during the late afternoon, casting gentle directional shadows and surrounding the subject in soft amber tones to create a calm, radiant mood."
-
     elif [[ "$EXP" == *"foggy_1"* ]]; then
         PROMPT="Relit with dense fog in a muted outdoor setting, casting soft diffused shadows and surrounding the subject in pale gray light to create a quiet, atmospheric mood."
-
     elif [[ "$EXP" == *"moonlight_1"* ]]; then
         PROMPT="Relit with cold moonlight in a minimalist nighttime scene, casting crisp soft shadows and bathing the subject in icy blue highlights to create a tranquil, distant mood."
-
     else
         echo "Unknown lighting type in experiment name: $EXP"
         exit 1
@@ -62,9 +97,8 @@ run_inference() {
     CKPT_DIR="output/pix2pix_turbo/${EXP}/checkpoints"
     MODEL_PATH=$(ls -1 ${CKPT_DIR}/model_*.pkl | sort -V | tail -n 1)
 
-    # NOTE: hardcode to disk place now, change later! 
-    INPUT_DIR="/ssd0/shenzhen/Datasets/${DATASET}"
-    OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}/image"
+    INPUT_DIR="/home/shenzhen/Datasets/${DATASET}"
+    OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}/image${OUT_SUFFIX}"
 
     mkdir -p "$OUT_DIR"
 
@@ -80,15 +114,26 @@ run_inference() {
         --output_dir "$OUT_DIR" \
         --bw "$BW" \
         $EYE_FLAG \
-        $CENTER_CROP_FLAG
+        $CENTER_CROP_FLAG \
+        $YOLO_FLAG \
+        $CROP_RESIZE_FLAG \
+        $TARGET_FLAG
 }
 
 
 # # =====================================
-# # roadwork driving images
+# # roadwork driving images (NOTE: use 512x512 as crop_resize_size for better vis differences)
 # # =====================================
-# run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston"
-run_inference "2_24_drive_v2/foggy_1" "depth/workzone_segm/boston"
+
+# TODO: see if warp_resize or resize-warp is better!!!!
+
+# run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
+
+# run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
+# run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston" 1 512
+# run_inference "2_24_drive_v2/foggy_1" "depth/workzone_segm/boston" 2 512
+# run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston" 0 512
+# run_inference "2_24_drive_v2_warped_128/foggy_1" "depth/workzone_segm/boston" 2 512
 
 # # =====================================
 # # VITON/test

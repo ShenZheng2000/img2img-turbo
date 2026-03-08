@@ -32,7 +32,13 @@ train_pix2pix() {
 }
 
 # train_pix2pix "2_24_drive_v2/golden_sunlight_1"
-train_pix2pix "2_24_drive_v2/foggy_1"
+# train_pix2pix "2_24_drive_v2/foggy_1"
+
+# train_pix2pix "2_24_drive_v2_warped_128/golden_sunlight_1"
+# train_pix2pix "2_24_drive_v2_warped_128/foggy_1"
+
+# train_pix2pix "2_24_drive_v2_warped_64/golden_sunlight_1"
+# train_pix2pix "2_24_drive_v2_warped_64/foggy_1"
 
 # train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/moonlight_1" 40000
 # train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/golden_sunlight_1" 40000

@@ -16,6 +16,21 @@ import json
 from PIL import Image, ImageOps
 from pathlib import Path
 
+
+custom_classes = [
+    # BDD100K classes (excluding train)
+    "person","rider","car","truck","bus","motorcycle","bicycle",
+    "traffic light","traffic sign",
+    # "train",
+    # Roadwork classes
+    "Police Officer","Police Vehicle","Cone","Fence","Drum",
+    "Barricade","Barrier","Work Vehicle","Vertical Panel",
+    "Tubular Marker","Arrow Board","Bike Lane","Work Equipment",
+    "Worker","Other Roadwork Objects",
+    "Temporary Traffic Control Message Board",
+    "Temporary Traffic Control Sign"
+]
+
 # ===============================================================
 # ✅ Initialize face detector once
 # ===============================================================
@@ -274,6 +289,39 @@ def center_crop_pil(img: Image.Image, target_w: int, target_h: int) -> Image.Ima
     top = (h - target_h) // 2
     return img.crop((left, top, left + target_w, top + target_h))
 
+
+def build_identity_inv_grid(H, W, device="cpu", dtype=torch.float32):
+    xs = torch.linspace(-1, 1, W, device=device, dtype=dtype)
+    ys = torch.linspace(-1, 1, H, device=device, dtype=dtype)
+    grid_y, grid_x = torch.meshgrid(ys, xs, indexing="ij")
+    return torch.stack((grid_x, grid_y), dim=-1).unsqueeze(0)  # [1,H,W,2]
+
+
+def save_identity_inv_for_image(image_tensor, base_name, output_dir):
+    """
+    Create and save identity inverse grid matching image size.
+
+    image_tensor : [1,C,H,W]
+    base_name    : original filename (with extension)
+    output_dir   : folder to save .inv.pth
+    """
+    _, _, H, W = image_tensor.shape
+    base_noext, _ = os.path.splitext(base_name)
+
+    inv_path = os.path.join(output_dir, f"{base_noext}.inv.pth")
+
+    grid = build_identity_inv_grid(H, W)
+    torch.save(grid.cpu(), inv_path)
+
+def detect_yolo_bbox(img_pil, yolo_model, imgsz=768):
+    res = yolo_model(img_pil, imgsz=imgsz)[0]
+    if res.boxes is None or len(res.boxes) == 0:
+        return None
+    return res.boxes.xyxy.clone()
+
+def largest_divisible_by_32_leq(x: int) -> int:
+    # avoid 0; YOLO needs something reasonable
+    return max(32, (x // 32) * 32)
 
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)
