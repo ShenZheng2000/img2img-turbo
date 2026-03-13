@@ -28,6 +28,12 @@ run_cleanfid_dino() {
     --max_pairs -1
 }
 
+# # clear2rainy (pretrained)
+echo "=====================>Evaluating clear2rainy (pretrained)..."
+run_cleanfid_dino 0 "$BDD_DAY_DIR" "$BDD_RAINY_DIR" \
+  output/cyclegan_turbo/pretrained_clear2rainy/result_A \
+  output/cyclegan_turbo/pretrained_clear2rainy/result_B
+
 
 # # # cityscapes_to_acdc_rain
 # echo "=====================>Evaluating cityscapes_to_acdc_rain..."
@@ -70,17 +76,17 @@ run_cleanfid_dino() {
 
 
 
-# cityscapes_to_dark_zurich
-# echo "=====================>Evaluating cityscapes_to_dark_zurich..."
-run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
-  output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_A \
-  output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_B
+# # cityscapes_to_dark_zurich
+# # echo "=====================>Evaluating cityscapes_to_dark_zurich..."
+# run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
+#   output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_A \
+#   output/cyclegan_turbo/cityscapes_to_dark_zurich_resize_286_randomcrop_256x256_hflip/result_B
 
-# cityscapes_to_dark_zurich_warped_128
-# echo "=====================>Evaluating cityscapes_to_dark_zurich_warped_128..."
-run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
-  output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
-  output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_B
+# # cityscapes_to_dark_zurich_warped_128
+# # echo "=====================>Evaluating cityscapes_to_dark_zurich_warped_128..."
+# run_cleanfid_dino 0 "$CS_DAY_DIR" "$DZ_NIGHT_DIR" \
+#   output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_A \
+#   output/cyclegan_turbo/cityscapes_to_dark_zurich_warped_128_resize_286_randomcrop_256x256_hflip/result_B
 
 # # cityscapes_to_acdc_fog
 # echo "=====================>Evaluating cityscapes_to_acdc_fog..."

@@ -97,8 +97,8 @@ run_inference() {
     CKPT_DIR="output/pix2pix_turbo/${EXP}/checkpoints"
     MODEL_PATH=$(ls -1 ${CKPT_DIR}/model_*.pkl | sort -V | tail -n 1)
 
-    INPUT_DIR="/home/shenzhen/Datasets/${DATASET}"
-    OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}/image${OUT_SUFFIX}"
+    INPUT_DIR="/ssd0/shenzhen/Datasets/${DATASET}"
+    OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}${OUT_SUFFIX}"
 
     mkdir -p "$OUT_DIR"
 
@@ -120,12 +120,12 @@ run_inference() {
         $TARGET_FLAG
 }
 
+# TODO: fix code bug, now we are putting image/ fodler inside image/ foldeer!!!!!!!!
 
 # # =====================================
 # # roadwork driving images (NOTE: use 512x512 as crop_resize_size for better vis differences)
 # # =====================================
 
-# TODO: see if warp_resize or resize-warp is better!!!!
 
 # run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
 
@@ -138,16 +138,18 @@ run_inference() {
 # # =====================================
 # # VITON/test
 # # =====================================
-# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "VITON/test"
-# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "VITON/test"
-# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "VITON/test"
-# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "VITON/test" 
+# run_inference "exp_1_10_1_warped_128_eyes/golden_sunlight_1" "VITON/test" 0
+# run_inference "exp_1_10_1_warped_128_eyes/moonlight_1" "VITON/test" 1
+# run_inference "exp_1_10_1_warped_128_eyes/foggy_1" "VITON/test" 2
+# run_inference "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" "VITON/test" 3
 
+# run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test_sample_100" 7
 # run_inference "exp_1_10_1/golden_sunlight_1" "VITON/test"
 # run_inference "exp_1_10_1/moonlight_1" "VITON/test" 6
 # run_inference "exp_1_10_1/foggy_1" "VITON/test"
 # run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test"
 
+# TODO: rerun this later! 
 # run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "VITON/test"
 # run_inference "exp_1_1_warped_128_eyes/moonlight_1" "VITON/test"
 # run_inference "exp_1_1_warped_128_eyes/foggy_1" "VITON/test"

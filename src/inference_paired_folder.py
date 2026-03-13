@@ -23,6 +23,8 @@ from warp_utils.warp_pipeline import (
 
 from ultralytics import YOLOWorld
 
+import time
+
 # ============================================================
 # Helper: parse arguments
 # ============================================================
@@ -232,8 +234,17 @@ def main():
     if len(img_list) == 0:
         raise RuntimeError("❌ No images found to process.")
 
+    torch.cuda.synchronize() # Wait for everything to be ready
+    start_time = time.perf_counter()
+
     for input_path in tqdm(img_list, desc="Processing"):
         process_image(input_path, model, face_app, yolo_model, args)
+
+    torch.cuda.synchronize()
+    end_time = time.perf_counter()
+    total_time = end_time - start_time
+    print(f"\n⏱ Total inference time: {total_time:.2f} seconds")
+    print(f"⏱ Avg time per image: {total_time / len(img_list):.3f} seconds")
 
 
 if __name__ == "__main__":

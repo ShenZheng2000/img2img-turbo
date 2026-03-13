@@ -88,10 +88,16 @@ run_fidelity_unwarp() {
 # run_fidelity_unwarp 1 output/cyclegan_turbo/BDD100K_clear2rainy_warped_128_resize_286_randomcrop_256x256_hflip/result_B "$BDD_DAY_DIR"
 
 
-# # BDD100K_day2night_pretrained
-echo "=====================>Evaluating BDD100K_day2night_pretrained..."
-run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_day2night/result_A "$BDD_NIGHT_DIR"
-run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_day2night/result_B "$BDD_DAY_DIR"
+# # # BDD100K_day2night_pretrained
+# echo "=====================>Evaluating BDD100K_day2night_pretrained..."
+# run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_day2night/result_A "$BDD_NIGHT_DIR"
+# run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_day2night/result_B "$BDD_DAY_DIR"
+
+
+# # BDD100K_clear2rainy_pretrained
+echo "=====================>Evaluating BDD100K_clear2rainy_pretrained..."
+run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_clear2rainy/result_A "$BDD_RAINY_DIR"
+run_fidelity_unwarp 1 output/cyclegan_turbo/pretrained_clear2rainy/result_B "$BDD_DAY_DIR"
 
 
 # # BDD100K_day2night_resize_286_randomcrop_256x256_hflip
