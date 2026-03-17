@@ -74,7 +74,7 @@ def process_image(input_path, output_path, model, bbox_map, args, T_val):
             base_name = os.path.basename(input_path)
             bbox = get_gt_bbox(base_name, input_image, bbox_map, device=x_01.device)
             # warped, warp_grid = apply_forward_warp(x_t, bbox, bw=args.bw, separable=args.separable)
-            warped_01, warp_grid = apply_forward_warp(x_01, bbox, bw=args.bw, separable=args.separable)
+            warped_01, warp_grid, saliency = apply_forward_warp(x_01, bbox, bw=args.bw, separable=args.separable)
 
             # (1) save warped image
             warped_pil = transforms.ToPILImage()(warped_01[0].cpu().clamp(0,1))

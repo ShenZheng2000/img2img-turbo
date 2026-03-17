@@ -14,6 +14,9 @@ run_inference() {
 
     TARGET_SIZE="${5:-784}"
 
+    KEEP_ASPECT="${6:-}"
+    KEEP_ASPECT_FLAG=""
+
     # -------------------------------
     # Auto-detect bandwidth (BW)
     # -------------------------------
@@ -59,6 +62,12 @@ run_inference() {
         echo "Detected: crop_resize_size = $CROP_RESIZE_SIZE"
     fi
 
+    if [[ "$KEEP_ASPECT" == "1" ]]; then
+        KEEP_ASPECT_FLAG="--keep_aspect"
+        OUT_SUFFIX="${OUT_SUFFIX}_ka"
+        echo "Detected: keep_aspect = True"
+    fi
+
 
     # -------------------------------
     # target_size flag + optional OUT_DIR suffix
@@ -97,6 +106,7 @@ run_inference() {
     CKPT_DIR="output/pix2pix_turbo/${EXP}/checkpoints"
     MODEL_PATH=$(ls -1 ${CKPT_DIR}/model_*.pkl | sort -V | tail -n 1)
 
+    # INPUT_DIR="/home/shenzhen/Datasets/${DATASET}"
     INPUT_DIR="/ssd0/shenzhen/Datasets/${DATASET}"
     OUT_DIR="output/pix2pix_turbo/${EXP}/${DATASET}${OUT_SUFFIX}"
 
@@ -117,15 +127,38 @@ run_inference() {
         $CENTER_CROP_FLAG \
         $YOLO_FLAG \
         $CROP_RESIZE_FLAG \
-        $TARGET_FLAG
-}
+        $TARGET_FLAG \
+        $KEEP_ASPECT_FLAG
+  }
 
-# TODO: fix code bug, now we are putting image/ fodler inside image/ foldeer!!!!!!!!
+# NOTE: forget about KEEP_ASPECT_FLAG for now, although relight image are slight better
+# That's because we have to change human relight data preprocessing pipeline for both baseline and our model to let it work 
+# And because for driving scene, it might affect model performance 
+
+
+# =====================================
+# roadwork driving videos
+# =====================================
+# EXP="2_24_drive_v2_warped_128/golden_sunlight_1"
+# EXP="2_24_drive_v2_warped_128/foggy_1"
+
+# # NOTE: hardcode for now! 
+# folders=(/ssd0/shenzhen/Datasets/ROADWork/extracted_frames/boston_*)
+
+# for gpu in 0 1 2 3 4 5 6 7; do
+# (
+#     for ((i=gpu; i<${#folders[@]}; i+=8)); do
+#         folder_name=$(basename "${folders[$i]}")
+#         run_inference "$EXP" "ROADWork/extracted_frames/${folder_name}" "$gpu"
+#     done
+# ) &
+# done
+
+# wait
 
 # # =====================================
 # # roadwork driving images (NOTE: use 512x512 as crop_resize_size for better vis differences)
 # # =====================================
-
 
 # run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
 
@@ -149,7 +182,7 @@ run_inference() {
 # run_inference "exp_1_10_1/foggy_1" "VITON/test"
 # run_inference "exp_1_10_1/noon_sunlight_1" "VITON/test"
 
-# TODO: rerun this later! 
+# TODO: rerun this part later, when trinity-2-29 is available! 
 # run_inference "exp_1_1_warped_128_eyes/golden_sunlight_1" "VITON/test"
 # run_inference "exp_1_1_warped_128_eyes/moonlight_1" "VITON/test"
 # run_inference "exp_1_1_warped_128_eyes/foggy_1" "VITON/test"

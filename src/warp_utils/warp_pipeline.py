@@ -323,6 +323,33 @@ def largest_divisible_by_32_leq(x: int) -> int:
     # avoid 0; YOLO needs something reasonable
     return max(32, (x // 32) * 32)
 
+def resize_keep_aspect(img, target_size):
+    w, h = img.size
+    scale = target_size / max(w, h)
+    new_w = round(w * scale)
+    new_h = round(h * scale)
+
+    # ensure divisible by 8 for diffusion models
+    new_w = (new_w // 8) * 8
+    new_h = (new_h // 8) * 8
+
+    return img.resize((new_w, new_h), Image.LANCZOS)
+
+def resize_keep_aspect_min(img, target_size):
+    w, h = img.size
+
+    # scale so the shorter side becomes target_size
+    scale = target_size / min(w, h)
+
+    new_w = round(w * scale)
+    new_h = round(h * scale)
+
+    # ensure divisible by 8 for diffusion models
+    new_w = (new_w // 8) * 8
+    new_h = (new_h // 8) * 8
+
+    return img.resize((new_w, new_h), Image.LANCZOS)
+
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)
 # ===============================================================

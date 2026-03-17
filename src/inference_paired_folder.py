@@ -18,7 +18,9 @@ from warp_utils.warp_pipeline import (
     center_crop_pil,
     custom_classes,
     detect_yolo_bbox,
-    largest_divisible_by_32_leq
+    largest_divisible_by_32_leq,
+    resize_keep_aspect,
+    resize_keep_aspect_min
 )
 
 from ultralytics import YOLOWorld
@@ -62,6 +64,11 @@ def parse_args():
         default=None,
         help='If set, after center crop to target_size, resize to this size for model inference.'
     )
+    parser.add_argument(
+        '--keep_aspect',
+        action='store_true',
+        help='Resize with aspect ratio preserved so the longest side becomes target_size.'
+    )
 
     parser.set_defaults(separable=True)
     args = parser.parse_args()
@@ -84,6 +91,9 @@ def process_image(input_path, model, face_app, yolo_model, args):
     if args.center_crop:
         img = Image.open(input_path).convert("RGB")
 
+        if args.keep_aspect:
+            img = resize_keep_aspect_min(img, args.target_size)
+
         # (1) center crop
         img = center_crop_pil(img, args.target_size, args.target_size)
         cropped_size = (args.target_size, args.target_size)
@@ -97,7 +107,11 @@ def process_image(input_path, model, face_app, yolo_model, args):
                 )
     else:
         img, cropped_size = crop_to_foreground(input_path)
-        img = img.resize((args.target_size, args.target_size), Image.LANCZOS)    
+
+        if args.keep_aspect:
+            img = resize_keep_aspect(img, args.target_size)
+        else:
+            img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
 
     c_t = F.to_tensor(img).unsqueeze(0).cuda()
     if args.use_fp16:
@@ -143,7 +157,8 @@ def process_image(input_path, model, face_app, yolo_model, args):
                 # (1) save warped image
                 # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
                 warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
-                warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
+                if not args.keep_aspect:
+                    warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
                 warped_pil.save(output_path.with_name(output_path.stem + "_warp.png"))
 
                 # (1.5) save saliency map at native resolution (NO resize)
@@ -160,7 +175,8 @@ def process_image(input_path, model, face_app, yolo_model, args):
 
                 # (3) save warped+relit
                 warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
-                warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
+                if not args.keep_aspect:
+                    warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
                 warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
 
                 # (4) unwarp back
@@ -171,7 +187,8 @@ def process_image(input_path, model, face_app, yolo_model, args):
         # (5) save final warp→relight→unwarp
         # print(f"📊 final unwarped range: min={output_image.min().item():.3f}, max={output_image.max().item():.3f}")
         output_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
-        output_pil = resize_longest_side(output_pil, cropped_size, args.target_size)
+        if not args.keep_aspect:
+            output_pil = resize_longest_side(output_pil, cropped_size, args.target_size)
         final_path = output_path.with_name(output_path.stem + "_warp_relight_unwarp.png")
         output_pil.save(final_path)
         print(f"✅ Saved results for {input_path.name} in {out_dir}")
