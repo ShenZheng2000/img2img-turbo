@@ -1,0 +1,21 @@
+# -----------------------------
+# Model
+# -----------------------------
+use_fp16: false
+use_yoloworld: false
+yolo_model_path: ""
+
+# -----------------------------
+# Processing
+# -----------------------------
+target_size: 784
+crop_resize_size: null
+center_crop: false
+keep_aspect: false
+
+# -----------------------------
+# Warp
+# -----------------------------
+bw: 0
+separable: true
+include_eyes: false

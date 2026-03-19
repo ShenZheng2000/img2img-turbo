@@ -60,13 +60,6 @@ train_pix2pix() {
 # train_pix2pix "exp_1_10_1/foggy_1"
 # train_pix2pix "exp_1_10_1_warped_128_eyes/foggy_1"
 
-
-# train_pix2pix "exp_1_6/golden_sunlight_1"
-# train_pix2pix "exp_1_6_warped_128_eyes/golden_sunlight_1"
-
-# train_pix2pix "exp_1_6/noon_sunlight_1"
-# train_pix2pix "exp_1_6_warped_128_eyes/noon_sunlight_1"
-
 # train_pix2pix "exp_1_1/golden_sunlight_1"
 # train_pix2pix "exp_1_1_warped_128_eyes/golden_sunlight_1"
 

@@ -26,60 +26,49 @@ from warp_utils.warp_pipeline import (
 from ultralytics import YOLOWorld
 
 import time
+from omegaconf import OmegaConf
 
 # ============================================================
-# Helper: parse arguments
+# Helper: parse YAML config
 # ============================================================
-def parse_args():
+def load_config():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--exp_config', type=str, required=True)
+
+    # REQUIRED CLI args
     parser.add_argument('--input_dir', type=str, required=True)
+    parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--prompt', type=str, required=True)
-    parser.add_argument('--model_name', type=str, default='')
-    parser.add_argument('--model_path', type=str, default='')
-    parser.add_argument('--output_dir', type=str, default='output')
-    parser.add_argument('--use_fp16', action='store_true')
-    parser.add_argument('--target_size', type=int, default=784)
-    parser.add_argument('--bw', type=int, default=0)
-    parser.add_argument(
-        "--no-separable",
-        action="store_false",
-        dest="separable",
-        help="Disable separable KDE grid (default: True)"
-    )
-    parser.add_argument(
-        "--include-eyes",
-        action="store_true",
-        help="If set, include left/right eye boxes in face detection"
-    )
-    parser.add_argument('--center_crop', action='store_true',
-                    help='If set, center-crop (or resize-up then crop) to target_size x target_size, instead of crop_to_foreground.')
-    parser.add_argument(
-        "--use-yoloworld",
-        action="store_true",
-        help="Use YOLO-World to detect bbox on-the-fly (no face_app bbox)."
-    )    
-    parser.add_argument(
-        '--crop_resize_size',
-        type=int,
-        default=None,
-        help='If set, after center crop to target_size, resize to this size for model inference.'
-    )
-    parser.add_argument(
-        '--keep_aspect',
-        action='store_true',
-        help='Resize with aspect ratio preserved so the longest side becomes target_size.'
-    )
+    parser.add_argument('--model_path', type=str, required=True)
 
-    parser.set_defaults(separable=True)
-    args = parser.parse_args()
+    cli_args = parser.parse_args()
 
-    if args.model_name == '' != args.model_path == '':
-        raise ValueError('Either model_name or model_path should be provided')
+    # load YAML (for shared settings only)
+    cfg = load_with_inheritance(cli_args.exp_config)
+    config_dict = OmegaConf.to_container(cfg, resolve=True)
+
+    # override / inject CLI values
+    config_dict["input_dir"] = cli_args.input_dir
+    config_dict["output_dir"] = cli_args.output_dir
+    config_dict["prompt"] = cli_args.prompt
+    config_dict["model_path"] = cli_args.model_path
+
+    args = argparse.Namespace(**config_dict)
 
     os.makedirs(args.output_dir, exist_ok=True)
     return args
 
 
+def load_with_inheritance(path):
+    import os
+    cfg = OmegaConf.load(path)
+
+    if "inherit" in cfg:
+        parent_path = os.path.join(os.path.dirname(path), cfg.inherit)
+        parent_cfg = load_with_inheritance(parent_path)
+        cfg = OmegaConf.merge(parent_cfg, cfg)
+
+    return cfg
 
 # ============================================================
 # Main processing for one image
@@ -198,9 +187,10 @@ def process_image(input_path, model, face_app, yolo_model, args):
 # Main
 # ============================================================
 def main():
-    args = parse_args()
+    args = load_config()  # <-- Changed here
 
-    model = Pix2Pix_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
+    # model = Pix2Pix_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
+    model = Pix2Pix_Turbo(pretrained_name=None, pretrained_path=args.model_path)
     model.set_eval()
     if args.use_fp16:
         model.half()
@@ -209,7 +199,7 @@ def main():
 
     yolo_model = None
     if args.use_yoloworld:
-        yolo_model = YOLOWorld("yolov8x-world.pt")
+        yolo_model = YOLOWorld(args.yolo_model_path)
         yolo_model.set_classes(custom_classes)
 
     input_root = Path(args.input_dir)
@@ -228,25 +218,6 @@ def main():
             if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
         ])
         print(f"📁 Using flat image mode: {len(img_list)} images found in {images_dir}")
-
-    # --------------------------------------------------
-    # Case 2: legacy structure: root/subfolder/bdy_*.*
-    # --------------------------------------------------
-    else:
-        subfolders = sorted([p for p in input_root.iterdir() if p.is_dir()])
-        for folder in subfolders:
-            body_imgs = sorted([
-                p for p in folder.glob("bdy_*.*")
-                if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
-            ])
-            if len(body_imgs) == 1:
-                img_list.append(body_imgs[0])
-            elif len(body_imgs) == 0:
-                print(f"⚠️ No body images found in {folder}")
-            else:
-                print(f"⚠️ Multiple body images found in {folder}, skipping.")
-
-        print(f"📁 Using legacy folder mode: {len(img_list)} images found")
 
     if len(img_list) == 0:
         raise RuntimeError("❌ No images found to process.")

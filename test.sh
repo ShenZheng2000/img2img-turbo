@@ -160,7 +160,7 @@ run_inference() {
 # # roadwork driving images (NOTE: use 512x512 as crop_resize_size for better vis differences)
 # # =====================================
 
-# run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
+# run_inference "2_24_drive_v2_warped_128/golden_sunlight_1" "depth/workzone_segm/boston"
 
 # run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston" 1 512 1080
 # run_inference "2_24_drive_v2/golden_sunlight_1" "depth/workzone_segm/boston" 1 512
