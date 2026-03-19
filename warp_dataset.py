@@ -33,10 +33,6 @@ def parse_args():
     p.add_argument("--no-separable", action="store_false", dest="separable")
     p.add_argument("--include-eyes", action="store_true")
     p.add_argument("--input_root", type=str, default="/home/shenzhen/Datasets/relighting")
-    # p.add_argument("--train-bbox-json", type=str, default=None,
-    #             help="COCO JSON file for training set bboxes")
-    # p.add_argument("--val-bbox-json", type=str, default=None,
-    #             help="COCO JSON file for validation/test set bboxes")
     p.add_argument("--bbox-json", nargs="+", default=None)
     p.add_argument("--warp-subfolders", nargs="+", default=["train_A"],
                 help="List of subfolders to warp (others will be copied only)")
@@ -79,7 +75,6 @@ class WarpDatasetPipeline:
         os.makedirs(self.output_root, exist_ok=True)
 
         # --------------- bbox mode ----------------
-        # self.bbox_map = load_bbox_map(args.train_bbox_json, args.val_bbox_json)
         self.bbox_map = load_bbox_map(args.bbox_json)
 
         if args.use_yoloworld:
