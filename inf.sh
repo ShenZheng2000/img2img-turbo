@@ -46,6 +46,8 @@ run_infer() {
 # run_infer   exp_1_10_1_warped_128_eyes                        noon_sunlight_1   VITON/test_sample_100
 # run_infer   exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes   noon_sunlight_1   VITON/test_sample_100
 
+
+# NOTE: these lines using different python files! 
 # Example usage (driving I2I):
 # python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml --direction a2b
 # python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml --direction b2a

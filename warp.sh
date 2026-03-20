@@ -24,9 +24,11 @@ warp_relight() {
         --relight_type "$relight_type"
 }
 
-# Examples
+# Examples for relighting:
 # warp_relight 2_24_drive_v2_warped_128 golden_sunlight_1
 # warp_relight exp_1_10_1_warped_128_eyes golden_sunlight_1
+
+# Examples for driving I2I:
 warp_relight cityscapes_to_acdc_fog_warped_128 
 
 

@@ -1,10 +1,4 @@
-# pip install huggingface_hub==0.25.0
-# pip install peft==0.10.0
-# pip install wandb
-# pip install vision_aided_loss
-
 # NOTE: --max_train_steps is doubled (10k->20k) with fewer gpus (8->4)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# NOTE: hardcode DATASET_NAME and EXP to be the same. 
 # NOTE: adjust config if needed: /home/shenzhen/.cache/huggingface/accelerate/default_config.yaml
 # NOTE: --resolution here only for clean-fid calculation, not for training 
 train_pix2pix() {
