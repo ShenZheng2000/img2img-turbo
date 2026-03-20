@@ -1,0 +1,10 @@
+inherit: BDD100K_clear2rainy.yaml
+
+# -----------------------------
+# Warp
+# -----------------------------
+bw: 128
+warp_subfolders: ["train_A", "train_B"]
+bbox_json:
+  - /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_train_coco.json
+  - /ssd0/shenzhen/Datasets/driving/BDD100K/100k/coco_labels/det_val_coco.json

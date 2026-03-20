@@ -34,7 +34,7 @@ def load_config():
     # REQUIRED CLI args
     parser.add_argument('--input_root', type=str, required=True)
     parser.add_argument('--target_prefix', type=str, required=True)
-    parser.add_argument('--relight_type', type=str, required=True)
+    parser.add_argument('--relight_type', type=str, default=None)
     
     cli_args = parser.parse_args()
 

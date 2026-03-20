@@ -1,0 +1,10 @@
+inherit: cityscapes_to_dark_zurich.yaml
+
+# -----------------------------
+# Warp
+# -----------------------------
+bw: 128
+warp_subfolders: ["train_A", "train_B"]
+bbox_json:
+  - /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_train_poly.json
+  - /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_val_poly.json
