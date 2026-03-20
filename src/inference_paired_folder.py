@@ -20,7 +20,8 @@ from warp_utils.warp_pipeline import (
     detect_yolo_bbox,
     largest_divisible_by_32_leq,
     resize_keep_aspect,
-    resize_keep_aspect_min
+    resize_keep_aspect_min,
+    load_with_inheritance
 )
 
 from ultralytics import YOLOWorld
@@ -59,16 +60,6 @@ def load_config():
     return args
 
 
-def load_with_inheritance(path):
-    import os
-    cfg = OmegaConf.load(path)
-
-    if "inherit" in cfg:
-        parent_path = os.path.join(os.path.dirname(path), cfg.inherit)
-        parent_cfg = load_with_inheritance(parent_path)
-        cfg = OmegaConf.merge(parent_cfg, cfg)
-
-    return cfg
 
 # ============================================================
 # Main processing for one image

@@ -16,6 +16,10 @@ keep_aspect: false
 # -----------------------------
 # Warp
 # -----------------------------
-bw: 0
 separable: true
+
+bw: 0
 include_eyes: false
+
+bbox_json: null
+warp_subfolders: null

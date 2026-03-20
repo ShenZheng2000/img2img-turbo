@@ -45,29 +45,24 @@ train_pix2pix() {
 # train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/noon_sunlight_1" 40000
 # train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes/foggy_1" 40000
 
-# train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged/moonlight_1" 40000
-# train_pix2pix "exp_1_10_1_exp_1_10_1_v2_merged/golden_sunlight_1" 40000
 
 # train_pix2pix "exp_1_10_1/golden_sunlight_1"
-# train_pix2pix "exp_1_10_1_warped_128_eyes/golden_sunlight_1"
-
 # train_pix2pix "exp_1_10_1/noon_sunlight_1"
-# train_pix2pix "exp_1_10_1_warped_128_eyes/noon_sunlight_1"
-
 # train_pix2pix "exp_1_10_1/moonlight_1"
-# train_pix2pix "exp_1_10_1_warped_128_eyes/moonlight_1"
-
 # train_pix2pix "exp_1_10_1/foggy_1"
+
+# train_pix2pix "exp_1_10_1_warped_128_eyes/golden_sunlight_1"
+# train_pix2pix "exp_1_10_1_warped_128_eyes/noon_sunlight_1"
+# train_pix2pix "exp_1_10_1_warped_128_eyes/moonlight_1"
 # train_pix2pix "exp_1_10_1_warped_128_eyes/foggy_1"
 
+
 # train_pix2pix "exp_1_1/golden_sunlight_1"
-# train_pix2pix "exp_1_1_warped_128_eyes/golden_sunlight_1"
-
 # train_pix2pix "exp_1_1/noon_sunlight_1"
-# train_pix2pix "exp_1_1_warped_128_eyes/noon_sunlight_1"
-
 # train_pix2pix "exp_1_1/moonlight_1"
-# train_pix2pix "exp_1_1_warped_128_eyes/moonlight_1"
-
 # train_pix2pix "exp_1_1/foggy_1"
+
+# train_pix2pix "exp_1_1_warped_128_eyes/golden_sunlight_1"
+# train_pix2pix "exp_1_1_warped_128_eyes/noon_sunlight_1"
+# train_pix2pix "exp_1_1_warped_128_eyes/moonlight_1"
 # train_pix2pix "exp_1_1_warped_128_eyes/foggy_1"

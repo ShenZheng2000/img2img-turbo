@@ -15,7 +15,7 @@ import os
 import json
 from PIL import Image, ImageOps
 from pathlib import Path
-
+from omegaconf import OmegaConf
 
 custom_classes = [
     # BDD100K classes (excluding train)
@@ -349,6 +349,17 @@ def resize_keep_aspect_min(img, target_size):
     new_h = (new_h // 8) * 8
 
     return img.resize((new_w, new_h), Image.LANCZOS)
+
+def load_with_inheritance(path):
+    import os
+    cfg = OmegaConf.load(path)
+
+    if "inherit" in cfg:
+        parent_path = os.path.join(os.path.dirname(path), cfg.inherit)
+        parent_cfg = load_with_inheritance(parent_path)
+        cfg = OmegaConf.merge(parent_cfg, cfg)
+
+    return cfg
 
 # ===============================================================
 # ✅ Forward warp (returns warped tensor + warp grid)

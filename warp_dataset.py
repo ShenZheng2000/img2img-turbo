@@ -6,6 +6,7 @@ import argparse
 from PIL import Image
 from tqdm import tqdm
 from ultralytics import YOLOWorld
+from omegaconf import OmegaConf
 
 # ✅ warp utils
 from src.warp_utils.warp_pipeline import (
@@ -17,7 +18,8 @@ from src.warp_utils.warp_pipeline import (
                                         apply_forward_warp,
                                         save_identity_inv_for_image,
                                         custom_classes,
-                                        detect_yolo_bbox
+                                        detect_yolo_bbox,
+                                        load_with_inheritance
 )
 
 from src.warp_utils.warping_layers import invert_grid, save_img_warp, load_img_warp
@@ -25,26 +27,49 @@ from src.warp_utils.warping_layers import invert_grid, save_img_warp, load_img_w
 # ============================================================
 # 1. Parse Args
 # ============================================================
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--target_prefix", type=str, required=True)
-    p.add_argument("--relight_type", type=str, default=None)
-    p.add_argument("--bw", type=int, default=128)
-    p.add_argument("--no-separable", action="store_false", dest="separable")
-    p.add_argument("--include-eyes", action="store_true")
-    p.add_argument("--input_root", type=str, default="/home/shenzhen/Datasets/relighting")
-    p.add_argument("--bbox-json", nargs="+", default=None)
-    p.add_argument("--warp-subfolders", nargs="+", default=["train_A"],
-                help="List of subfolders to warp (others will be copied only)")
+def load_config():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exp_config', type=str, required=True)
 
-    p.add_argument("--out-h", type=int, default=None)
-    p.add_argument("--out-w", type=int, default=None)
+    # REQUIRED CLI args
+    parser.add_argument('--input_root', type=str, required=True)
+    parser.add_argument('--target_prefix', type=str, required=True)
+    parser.add_argument('--relight_type', type=str, required=True)
+    
+    cli_args = parser.parse_args()
 
-    p.add_argument("--use-yoloworld", action="store_true",
-                help="Use YOLO-World to detect bbox on-the-fly (no bbox json needed).")
+    # load YAML (for shared settings only)
+    cfg = load_with_inheritance(cli_args.exp_config)
+    config_dict = OmegaConf.to_container(cfg, resolve=True)
 
-    p.set_defaults(separable=True)
-    return p.parse_args()
+    # override / inject CLI values
+    config_dict["input_root"] = cli_args.input_root
+    config_dict["target_prefix"] = cli_args.target_prefix
+    config_dict["relight_type"] = cli_args.relight_type
+    config_dict["exp_config"] = cli_args.exp_config   # ✅ ADD THIS
+
+    args = argparse.Namespace(**config_dict)
+
+    return args
+
+
+# def parse_args():
+#     p = argparse.ArgumentParser()
+#     p.add_argument("--target_prefix", type=str, required=True)
+#     p.add_argument("--relight_type", type=str, default=None)
+#     p.add_argument("--bw", type=int, default=128)
+#     p.add_argument("--no-separable", action="store_false", dest="separable")
+#     p.add_argument("--include-eyes", action="store_true")
+#     p.add_argument("--input_root", type=str, default="/home/shenzhen/Datasets/relighting")
+#     p.add_argument("--bbox-json", nargs="+", default=None)
+#     p.add_argument("--warp-subfolders", nargs="+", default=["train_A"],
+#                 help="List of subfolders to warp (others will be copied only)")
+#     p.add_argument("--use-yoloworld", action="store_true",
+#                 help="Use YOLO-World to detect bbox on-the-fly (no bbox json needed).")
+#     p.add_argument("--yolo-model-path", type=str, default=None)
+
+#     p.set_defaults(separable=True)
+#     return p.parse_args()
 
 
 # ============================================================
@@ -62,14 +87,18 @@ class WarpDatasetPipeline:
         else:
             self.input_root = os.path.join(args.input_root, args.target_prefix)
 
-        mode_tag = "" if args.separable else "_nonsep"
-        eye_tag = "_eyes" if args.include_eyes else ""
-        res_tag = f"_{args.out_h}x{args.out_w}" if args.out_h is not None and args.out_w is not None else ""
+        # mode_tag = "" if args.separable else "_nonsep"
+        # eye_tag = "_eyes" if args.include_eyes else ""
+        # self.output_root = os.path.join(
+        #     args.input_root,
+        #     f"{args.target_prefix}_warped_{self.bandwidth_scale}{eye_tag}{mode_tag}"
+        # )
 
         self.output_root = os.path.join(
             args.input_root,
-            f"{args.target_prefix}_warped_{self.bandwidth_scale}{eye_tag}{mode_tag}{res_tag}"
+            os.path.splitext(os.path.basename(args.exp_config))[0]
         )
+
         if args.relight_type:
             self.output_root = os.path.join(self.output_root, args.relight_type)
         os.makedirs(self.output_root, exist_ok=True)
@@ -80,7 +109,7 @@ class WarpDatasetPipeline:
         if args.use_yoloworld:
             self.bbox_map = None
             self.face_app = None
-            self.yolo_model = YOLOWorld("yolov8x-world.pt") # NOTE: use a larger model for better detection (especially small faces)
+            self.yolo_model = YOLOWorld(args.yolo_model_path) # NOTE: use a larger model for better detection (especially small faces)
             self.yolo_model.set_classes(custom_classes)  # hardcoded
             print("✅ Using YOLO-World bbox detector. GT bbox-json and face detector disabled.")
         elif self.bbox_map is not None:
@@ -124,28 +153,18 @@ class WarpDatasetPipeline:
             bbox = bbox.to(self.device)
 
         # --- visualize bbox ---
-        # self.visualize_bbox(img_pil, bbox, base)
         debug_dir = os.path.join(self.output_root, "_debug_bbox")
         visualize_bbox(img_pil, bbox, base, debug_dir)
 
-        # --- warp images and compute inverse grid ---
-        if self.args.out_h is not None and self.args.out_w is not None:
-            output_shape = (self.args.out_h, self.args.out_w)
-        else:
-            output_shape = None
-
+        # --- warp images and compute inverse grid --
         warped_img, warp_grid, _ = apply_forward_warp(
             c_t, 
             bbox, 
             self.bandwidth_scale, 
             separable=self.args.separable, 
-            output_shape=output_shape
         )
 
-        if output_shape is None:
-            out_h, out_w = c_t.shape[2], c_t.shape[3]
-        else:
-            out_h, out_w = output_shape
+        out_h, out_w = c_t.shape[2], c_t.shape[3]
 
         inverse_grid = invert_grid(warp_grid, (1, 3, out_h, out_w), separable=self.args.separable)
 
@@ -202,7 +221,8 @@ class WarpDatasetPipeline:
 
 # ============================================================
 def main():
-    args = parse_args()
+    # args = parse_args()
+    args = load_config()
     WarpDatasetPipeline(args).run()
 
 
