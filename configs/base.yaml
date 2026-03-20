@@ -23,3 +23,21 @@ include_eyes: false
 
 bbox_json: null
 warp_subfolders: null
+
+
+# -----------------------------
+# Driving Profiles
+# -----------------------------
+image_prep: "no_resize"
+
+model_path: ""
+
+a2b:
+  prompt: ""
+  input_dir: ""
+  output_dir: ""
+
+b2a:
+  prompt: ""
+  input_dir: ""
+  output_dir: ""

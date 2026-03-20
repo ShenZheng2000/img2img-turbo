@@ -39,7 +39,20 @@ run_infer() {
         --model_path "$model_path"
 }
 
-# Example usage: 
-# run_infer 2_24_drive_v2_warped_128 golden_sunlight_1 depth/workzone_segm/boston
-# run_infer exp_1_10_1_warped_128_eyes golden_sunlight_1 VITON/test_sample_100 1
-# run_infer exp_1_10_1 golden_sunlight_1 VITON/test_sample_100
+# Example usage (relighting): 
+# run_infer   2_24_drive_v2_warped_128                          noon_sunlight_1   depth/workzone_segm/boston
+# run_infer   exp_1_1_warped_128_eyes                           noon_sunlight_1   VITON/test_sample_100
+# run_infer   exp_1_10_1                                        noon_sunlight_1   VITON/test_sample_100
+# run_infer   exp_1_10_1_warped_128_eyes                        noon_sunlight_1   VITON/test_sample_100
+# run_infer   exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes   noon_sunlight_1   VITON/test_sample_100
+
+# Example usage (driving I2I):
+# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml --direction a2b
+# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml --direction b2a
+# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night_warped_128.yaml --direction a2b
+# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night_warped_128.yaml --direction b2a
+
+# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog.yaml --direction a2b
+# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog.yaml --direction a2b
+# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog_warped_128.yaml --direction a2b
+# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog_warped_128.yaml --direction b2a

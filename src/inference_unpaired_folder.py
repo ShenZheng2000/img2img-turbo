@@ -6,49 +6,56 @@ from torchvision import transforms
 from tqdm import tqdm
 from cyclegan_turbo import CycleGAN_Turbo
 from my_utils.training_utils import build_transform
-from warp_utils.warp_pipeline import get_gt_bbox, load_bbox_map, apply_forward_warp, apply_unwarp
+from warp_utils.warp_pipeline import (
+                                    get_gt_bbox, 
+                                    load_bbox_map, 
+                                    apply_forward_warp, 
+                                    apply_unwarp,
+                                    load_with_inheritance
+)
 from pathlib import Path
+from omegaconf import OmegaConf
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpg', '.jpeg', '.bmp', '.gif'])
 
 
 # ============================================================
-# Helper: parse arguments
+# Helper: parse YAML config
 # ============================================================
-def parse_args():
+def load_config():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--input_dir', type=str, required=True)
-    parser.add_argument('--prompt', type=str, required=False)
-    parser.add_argument('--model_name', type=str, default=None)
-    parser.add_argument('--model_path', type=str, default=None)
-    parser.add_argument('--output_dir', type=str, default=None)
-    parser.add_argument('--image_prep', type=str, default='resize_512x512')
-    parser.add_argument('--direction', type=str, default=None)
+    # Required CLI args
+    parser.add_argument('--exp_config', type=str, required=True)
+    parser.add_argument('--direction', type=str, required=True, choices=['a2b', 'b2a'])
 
-    # warp-related
-    parser.add_argument('--bw', type=int, default=0)
-    # parser.add_argument('--train-bbox-json', type=str, default=None)
-    # parser.add_argument('--val-bbox-json', type=str, default=None)
-    parser.add_argument("--bbox-json", nargs="+", default=None)
-    parser.add_argument('--separable', action="store_true", default=True)
+    cli_args = parser.parse_args()
 
-    args = parser.parse_args()
+    # Load YAML with inheritance
+    cfg = load_with_inheritance(cli_args.exp_config)
+    config_dict = OmegaConf.to_container(cfg, resolve=True)
 
-    # validation
-    if (args.model_name is None) == (args.model_path is None):
-        raise ValueError("You must provide EITHER model_name OR model_path, but not both.")
+    # Extract selected direction config
+    if cli_args.direction not in config_dict:
+        raise ValueError(f"Direction '{cli_args.direction}' not defined in the YAML config.")
 
-    if args.model_path is not None and args.prompt is None:
-        raise ValueError("Prompt is required when loading a custom model_path.")
+    direction_settings = config_dict.pop(cli_args.direction)
 
-    if args.model_name is not None:
-        if args.prompt is not None:
-            raise ValueError("Prompt is not required when loading a pretrained model.")
-        if args.direction is not None:
-            raise ValueError("Direction is not required when loading a pretrained model.")
+    # Remove the other unused direction block
+    unused_direction = 'b2a' if cli_args.direction == 'a2b' else 'a2b'
+    config_dict.pop(unused_direction, None)
 
+    # Merge selected direction settings into main config
+    config_dict.update(direction_settings)
+
+    # Save direction itself
+    config_dict['direction'] = cli_args.direction
+
+    # Convert to Namespace
+    args = argparse.Namespace(**config_dict)
+
+    os.makedirs(args.output_dir, exist_ok=True)
     return args
 
 
@@ -109,9 +116,11 @@ def process_image(input_path, output_path, model, bbox_map, args, T_val):
 # Main
 # ============================================================
 def main():
-    args = parse_args()
+    # args = parse_args()
+    args = load_config()
 
-    model = CycleGAN_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
+    # model = CycleGAN_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
+    model = CycleGAN_Turbo(pretrained_name=None, pretrained_path=args.model_path)
     model.eval()
     model.unet.enable_xformers_memory_efficient_attention()
 
