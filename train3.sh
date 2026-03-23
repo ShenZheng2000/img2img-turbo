@@ -40,7 +40,5 @@ train_cyclegan() {
 # train_cyclegan "BDD100K_clear2rainy_warped_128" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dark_zurich" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_dark_zurich_warped_128" "resize_286_randomcrop_256x256_hflip"
-# train_cyclegan "cityscapes_to_dense_fog" "resize_286_randomcrop_256x256_hflip"
-# train_cyclegan "cityscapes_to_dense_fog_warped_128" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_acdc_fog" "resize_286_randomcrop_256x256_hflip"
 # train_cyclegan "cityscapes_to_acdc_fog_warped_128" "resize_286_randomcrop_256x256_hflip"

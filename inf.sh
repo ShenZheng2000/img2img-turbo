@@ -40,7 +40,7 @@ run_infer() {
 }
 
 # Example usage (relighting): 
-# run_infer   2_24_drive_v2_warped_128                          noon_sunlight_1   depth/workzone_segm/boston
+# run_infer   2_24_drive_v2_warped_128                          noon_sunlight_1   relighting/workzone_segm/boston
 # run_infer   exp_1_1_warped_128_eyes                           noon_sunlight_1   VITON/test_sample_100
 # run_infer   exp_1_10_1                                        noon_sunlight_1   VITON/test_sample_100
 # run_infer   exp_1_10_1_warped_128_eyes                        noon_sunlight_1   VITON/test_sample_100

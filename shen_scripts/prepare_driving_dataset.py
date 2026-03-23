@@ -116,7 +116,7 @@ def main(
         print("\n✅ Copy finished.")
 
 
-# Example 1: Dark Zurich night (no beta filter)
+# Example 1: Cityscapes -> ACDC foggy
 # main(
 #     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
 #     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
@@ -129,21 +129,7 @@ def main(
 #     dry_run=False,
 # )
 
-# # # Example 3: Dense foggy (no beta filter)
-# main(
-#     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
-#     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
-#     train_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/train_dense_fog",
-#     test_B_root="/ssd0/shenzhen/Datasets/driving/dense/images/val_dense_fog",
-#     output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_dense_fog",
-#     prompt_A="driving in the day",
-#     prompt_B="driving in heavy fog",
-#     beta_B=None,
-#     dry_run=False,
-# )
-
-
-# # Example 3: Cityscapes -> ACDC foggy (no beta filter)
+# # Example 2: Cityscapes -> ACDC foggy (no beta filter)
 # main(
 #     train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
 #     test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
@@ -155,16 +141,3 @@ def main(
 #     beta_B=None,
 #     dry_run=False,
 # )
-
-# Example 4: Cityscapes -> ACDC rainy (no beta filter)
-main(
-    train_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/train",
-    test_A_root="/ssd0/shenzhen/Datasets/driving/cityscapes/leftImg8bit/val",
-    train_B_root="/ssd0/shenzhen/Datasets/driving/acdc/rgb_anon/rain/train",
-    test_B_root="/ssd0/shenzhen/Datasets/driving/acdc/rgb_anon/rain/val",
-    output_root="/ssd0/shenzhen/Datasets/driving/cityscapes_to_acdc_rain",
-    prompt_A="driving in the day",
-    prompt_B="driving in heavy rain",
-    beta_B=None,
-    dry_run=False,
-)
