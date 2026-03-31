@@ -29,6 +29,8 @@ pip install ultralytics==8.4.19
 pip install omegaconf
 ```
 
+<br>
+
 # 📥 2. Download Datasets
 
 
@@ -154,6 +156,7 @@ Configure GPUs via `accelerate config`:
 - Pix2Pix-Turbo (relighting): 4 GPUs → see `train.sh`
 - CycleGAN-Turbo (I2I): 8 GPUs → see `train3.sh`
 
+<br>
 
 # 🔍 6. Model Testing
 
@@ -170,6 +173,7 @@ Our final model (with warping) is available [here](https://drive.google.com/driv
 ## 6.3 Inference
 See `inf.sh` for example inference commands.
 
+<br>
 
 # 📍 7. Warp–Unwarp Integration
 
@@ -181,12 +185,14 @@ The main insertion points are:
 - CycleGAN-Turbo → `src/train_cyclegan_turbo.py`
 - Warp utilities → `src/warp_utils/`
 
+<br>
 
 # 📌 8. TODO Lists
 
 - [ ] Add Gradio demo
 - [ ] Add arXiv link
 
+<br>
 
 # 🙏 9. Acknowledgement
 
