@@ -24,61 +24,21 @@ warp_relight() {
         --relight_type "$relight_type"
 }
 
-# Examples for relighting:
-# warp_relight 2_24_drive_v2_warped_128 golden_sunlight_1
-# warp_relight exp_1_10_1_warped_128_eyes golden_sunlight_1
 
-# Examples for driving I2I:
-warp_relight cityscapes_to_acdc_fog_warped_128 
+# Driving Relighting
+# warp_relight  2_24_drive_v2_warped_128 golden_sunlight_1
+# warp_relight  2_24_drive_v2_warped_128 foggy_1
 
 
-
-##### Old code (for backup reference now)
-# # Driving Relight
-# input_root="/ssd0/shenzhen/Datasets/relighting"
-# exp_name="2_24_drive_v2"
-# relight_type="foggy_1"
-# bw=128
-
-# # NOTE: REMOVE --include-eyes for now! 
-# # NOTE: hardcode --use-yoloworld for now!
-# CUDA_VISIBLE_DEVICES=1 python warp_dataset.py \
-#     --input_root $input_root \
-#     --target_prefix $exp_name \
-#     --relight_type $relight_type \
-#     --bw $bw \
-#     --use-yoloworld \
-#     --yolo-model-path yolov8x-world.pt
+# Human Relighting
+# warp_relight  exp_1_1_warped_128_eyes                          golden_sunlight_1
+# warp_relight  exp_1_10_1_warped_128_eyes                       golden_sunlight_1
+# ... (repeat with other relight types above, only noon sunlight use the below for final model)
+# warp_relight  exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes  noon_sunlight_1
 
 
-# # Human Relight
-# input_root="/ssd0/shenzhen/Datasets/relighting"
-# exp_name="1_10_1_warped_128_eyes"
-# relight_type="foggy_1"
-# bw=128
-
-# CUDA_VISIBLE_DEVICES=1 python warp_dataset.py \
-#     --input_root $input_root \
-#     --target_prefix $exp_name \
-#     --relight_type $relight_type \
-#     --bw $bw \
-#     --include-eyes
-
-
-# # # # # Example usage with input_root (different), warp-subfolders (all), and bbox-json (gt)
-# # target_prefix="cityscapes_to_dark_zurich"
-# # target_prefix="cityscapes_to_dense_fog"
-# # target_prefix="cityscapes_to_acdc_fog"
-# # target_prefix="BDD100K_day2night"
-# # target_prefix="BDD100K_clear2rainy"
-
-# # NOTE: use bw 128 for now.
-# # NOTE: must use train json to warp, and check debug vis bbox to make sure warping works! 
-# python warp_dataset.py \
-#   --input_root /ssd0/shenzhen/Datasets/driving \
-#   --target_prefix $target_prefix \
-#   --bw 128 \
-#   --warp-subfolders train_A train_B \
-#   --bbox-json \
-#   /ssd0/shenzhen/Datasets/driving/cityscapes/gt_detection/instancesonly_filtered_gtFine_train_poly.json \
-#   /ssd0/shenzhen/Datasets/driving/acdc/gt_detection/instancesonly_train_gt_detection.json
+# Driving I2I
+# warp_relight BDD100K_day2night_warped_128
+# warp_relight BDD100K_clear2rainy_warped_128
+# warp_relight cityscapes_to_acdc_fog_warped_128
+# warp_relight cityscapes_to_dark_zurich_warped_128
