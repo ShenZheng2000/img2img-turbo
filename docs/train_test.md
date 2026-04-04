@@ -7,7 +7,7 @@ NOTE: Requires ~40GB GPU memory.
 
 Configure GPUs via `accelerate config`:
 
-- Pix2Pix-Turbo (relighting): 4 GPUs → see `train.sh`
+- pix2pix-Turbo (relighting): 4 GPUs → see `train.sh`
 - CycleGAN-Turbo (I2I): 8 GPUs → see `train3.sh`
 
 <br>
@@ -25,4 +25,6 @@ Configure GPUs via `accelerate config`:
 Our final model (with warping) is available [here](https://drive.google.com/drive/folders/136eVrXWOI6cSOnFRVYiGWqlERP_jLJ76?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto).
 
 ## 2.3 Inference
-See `inf.sh` for example inference commands.
+See `inf_paired.sh` for human relighting and driving scene relighting with pix2pix-Turbo.
+
+See `inf_unpaired.sh` for driving scene weather and time-of-day translation with CycleGAN-Turbo. 

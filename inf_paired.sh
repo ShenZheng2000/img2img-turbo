@@ -5,7 +5,7 @@ run_infer() {
     gpu_id="${4:-0}"
 
     # NOTE: hardcode here! 
-    input_root=/ssd0/shenzhen/Datasets
+    input_root=/home/shenzhen/Datasets
     output_root=output/pix2pix_turbo
 
     case "$relight_type" in
@@ -46,30 +46,10 @@ run_infer() {
 
 
 # Human Relighting
+run_infer   exp_1_10_1_warped_128_eyes                        golden_sunlight_1   VITON/test_sample_100
+
 # run_infer   exp_1_1_warped_128_eyes                           golden_sunlight_1   VITON/test
 # run_infer   exp_1_10_1                                        golden_sunlight_1   VITON/test
 # run_infer   exp_1_10_1_warped_128_eyes                        golden_sunlight_1   VITON/test
 # ... (repeat with other relight types above, only noon sunlight use the below for final model)
 # run_infer   exp_1_10_1_exp_1_10_1_v2_merged_warped_128_eyes   noon_sunlight_1     VITON/test
-
-
-# Driving I2I
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml                     --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night.yaml                     --direction b2a
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night_warped_128.yaml          --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_day2night_warped_128.yaml          --direction b2a
-
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_clear2rainy.yaml                   --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_clear2rainy.yaml                   --direction b2a
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_clear2rainy_warped_128.yaml        --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/BDD100K_clear2rainy_warped_128.yaml        --direction b2a
-
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog.yaml                --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog.yaml                --direction b2a
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog_warped_128.yaml     --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_acdc_fog_warped_128.yaml     --direction b2a
-
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_dark_zurich.yaml             --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_dark_zurich.yaml             --direction b2a
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_dark_zurich_warped_128.yaml  --direction a2b
-# python src/inference_unpaired_folder.py --exp_config configs/cityscapes_to_dark_zurich_warped_128.yaml  --direction b2a

@@ -29,14 +29,13 @@ from ultralytics import YOLOWorld
 import time
 from omegaconf import OmegaConf
 
+
 # ============================================================
-# Helper: parse YAML config
+# Config
 # ============================================================
 def load_config():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_config', type=str, required=True)
-
-    # REQUIRED CLI args
     parser.add_argument('--input_dir', type=str, required=True)
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--prompt', type=str, required=True)
@@ -44,48 +43,41 @@ def load_config():
 
     cli_args = parser.parse_args()
 
-    # load YAML (for shared settings only)
+    # load YAML then override with CLI values
     cfg = load_with_inheritance(cli_args.exp_config)
     config_dict = OmegaConf.to_container(cfg, resolve=True)
-
-    # override / inject CLI values
     config_dict["input_dir"] = cli_args.input_dir
     config_dict["output_dir"] = cli_args.output_dir
     config_dict["prompt"] = cli_args.prompt
     config_dict["model_path"] = cli_args.model_path
 
     args = argparse.Namespace(**config_dict)
-
     os.makedirs(args.output_dir, exist_ok=True)
     return args
 
 
-
 # ============================================================
-# Main processing for one image
+# Image loading & preprocessing
 # ============================================================
-def process_image(input_path, model, face_app, yolo_model, args):
-    # img, cropped_size = crop_to_foreground(input_path)
-    # img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
+def load_and_crop_image(input_path, args):
+    """Returns (img, cropped_size)"""
 
     if args.center_crop:
         img = Image.open(input_path).convert("RGB")
 
         if args.keep_aspect:
-            img = resize_keep_aspect_min(img, args.target_size)
+            img = resize_keep_aspect_min(img, args.target_size)  # ensure shortest side >= target
 
-        # (1) center crop
+        # crop center square region
         img = center_crop_pil(img, args.target_size, args.target_size)
         cropped_size = (args.target_size, args.target_size)
 
-        # (2) resize here ONLY for no-warp inference
-        if args.bw == 0:
-            if (args.crop_resize_size is not None) and (args.crop_resize_size != args.target_size):
-                img = img.resize(
-                    (args.crop_resize_size, args.crop_resize_size),
-                    Image.LANCZOS
-                )
+        # optional resize after crop (e.g. downscale for faster inference)
+        if args.bw == 0 and args.crop_resize_size and args.crop_resize_size != args.target_size:
+            img = img.resize((args.crop_resize_size, args.crop_resize_size), Image.LANCZOS)
+
     else:
+        # remove background padding and crop to foreground subject
         img, cropped_size = crop_to_foreground(input_path)
 
         if args.keep_aspect:
@@ -93,94 +85,127 @@ def process_image(input_path, model, face_app, yolo_model, args):
         else:
             img = img.resize((args.target_size, args.target_size), Image.LANCZOS)
 
+    return img, cropped_size
+
+
+# ============================================================
+# Detection
+# ============================================================
+def get_bbox(img, face_app, yolo_model, args):
+    """Detect subject bounding box. Returns bbox or None if not found."""
+
+    if args.use_yoloworld and yolo_model is not None:
+        # use YOLO for general object detection
+        w, h = img.size
+        imgsz = largest_divisible_by_32_leq(min(h, w))  # YOLO requires size divisible by 32
+        return detect_yolo_bbox(img, yolo_model, imgsz=imgsz)
+
+    # fallback to face detection
+    return detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
+
+
+# ============================================================
+# Warp pipeline
+# ============================================================
+def save_warp_intermediates(warped, saliency, output_path, cropped_size, args):
+    """Save warped image and saliency map as debug outputs."""
+
+    warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
+    if not args.keep_aspect:
+        warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
+    warped_pil.save(output_path.with_name(output_path.stem + "_warp.png"))
+
+    # normalize saliency to [0,1] and save as grayscale
+    sal = saliency.float()[0, 0]
+    sal = (sal - sal.min()) / (sal.max() - sal.min() + 1e-8)
+    sal_pil = transforms.ToPILImage()(sal.unsqueeze(0).cpu())
+    sal_pil.save(output_path.with_name(output_path.stem + "_saliency.png"))
+
+
+def save_warp_relit(output_image, output_path, cropped_size, args):
+    """Save warped+relit intermediate result for debugging."""
+
+    warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
+    if not args.keep_aspect:
+        warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
+    warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
+
+
+def run_warp_relight_unwarp(c_t, bbox, model, output_path, cropped_size, args):
+    """Warp → relight → unwarp pipeline. Returns final output tensor."""
+
+    warp_output_shape = (args.crop_resize_size, args.crop_resize_size) if args.crop_resize_size else None
+
+    # stretch subject to fill frame so model sees it at higher resolution
+    warped, warp_grid, saliency = apply_forward_warp(
+        c_t, bbox.to(c_t.device), args.bw, args.separable, output_shape=warp_output_shape
+    )
+    save_warp_intermediates(warped, saliency, output_path, cropped_size, args)
+
+    # run relighting on the warped image
+    output_image = model(warped, args.prompt)
+    save_warp_relit(output_image, output_path, cropped_size, args)
+
+    # unwarp back to original geometry
+    return apply_unwarp(warp_grid, output_image, args.separable)
+
+
+# ============================================================
+# Output
+# ============================================================
+def save_final_output(output_image, output_path, cropped_size, args):
+    """Resize back to original dimensions and save final result."""
+
+    output_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
+    if not args.keep_aspect:
+        output_pil = resize_longest_side(output_pil, cropped_size, args.target_size)
+    output_pil.save(output_path.with_name(output_path.stem + "_warp_relight_unwarp.png"))
+    print(f"✅ Saved results for {output_path.name}")
+
+
+# ============================================================
+# Orchestrator
+# ============================================================
+def process_image(input_path, model, face_app, yolo_model, args):
+
+    img, cropped_size = load_and_crop_image(input_path, args)
+
+    # convert to tensor and move to GPU
     c_t = F.to_tensor(img).unsqueeze(0).cuda()
     if args.use_fp16:
         c_t = c_t.half()
 
-    # prepare output folder structure
+    # mirror input directory structure in output
     rel_dir = input_path.parent.relative_to(args.input_dir)
     out_dir = Path(args.output_dir) / rel_dir
     out_dir.mkdir(parents=True, exist_ok=True)
     output_path = out_dir / input_path.name
 
-    # --- warp / relight / unwarp pipeline ---
     with torch.no_grad():
         if args.bw > 0:
-
-            # (0) get bbox and apply forward warp
-            if args.use_yoloworld and yolo_model is not None:
-                w, h = img.size
-                imgsz = largest_divisible_by_32_leq(min(h, w))
-                bbox = detect_yolo_bbox(img, yolo_model, imgsz=imgsz)
-            else:
-                bbox = detect_face_bbox(img, face_app, include_eyes=args.include_eyes)
+            bbox = get_bbox(img, face_app, yolo_model, args)
 
             if bbox is None:
+                # no subject found, relight directly without warping
                 output_image = model(c_t, args.prompt)
             else:
-                
-                # TODO: now hardcode crop_resize as warp_output_shape. change later
-                # warp-resize instead of just warp
-                if args.crop_resize_size is not None:
-                    warp_output_shape = (args.crop_resize_size, args.crop_resize_size)
-                else:
-                    warp_output_shape = None
-
-                warped, warp_grid, saliency = apply_forward_warp(
-                    c_t,
-                    bbox.to(c_t.device),
-                    args.bw,
-                    args.separable,
-                    output_shape=warp_output_shape
+                output_image = run_warp_relight_unwarp(
+                    c_t, bbox, model, output_path, cropped_size, args
                 )
-
-                # (1) save warped image
-                # print(f"📊 warped tensor range: min={warped.min().item():.3f}, max={warped.max().item():.3f}")
-                warped_pil = transforms.ToPILImage()(warped[0].cpu().clamp(0, 1))
-                if not args.keep_aspect:
-                    warped_pil = resize_longest_side(warped_pil, cropped_size, args.target_size)
-                warped_pil.save(output_path.with_name(output_path.stem + "_warp.png"))
-
-                # (1.5) save saliency map at native resolution (NO resize)
-                sal = saliency.float()          # shape [1,1,Hs,Ws] e.g. 31x51
-                sal = sal[0, 0]                 # -> [Hs, Ws]
-                # normalize to [0,1]
-                sal = (sal - sal.min()) / (sal.max() - sal.min() + 1e-8)
-                sal_pil = transforms.ToPILImage()(sal.unsqueeze(0).cpu())  # 1xHs×Ws grayscale
-                sal_pil.save(output_path.with_name(output_path.stem + "_saliency.png"))
-                
-                # (2) relight
-                output_image = model(warped, args.prompt)
-                # print(f"📊 relit tensor range:  min={output_image.min().item():.3f}, max={output_image.max().item():.3f}")
-
-                # (3) save warped+relit
-                warped_relit_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
-                if not args.keep_aspect:
-                    warped_relit_pil = resize_longest_side(warped_relit_pil, cropped_size, args.target_size)
-                warped_relit_pil.save(output_path.with_name(output_path.stem + "_warp_relight.png"))
-
-                # (4) unwarp back
-                output_image = apply_unwarp(warp_grid, output_image, args.separable)
         else:
+            # warp disabled, relight directly
             output_image = model(c_t, args.prompt)
 
-        # (5) save final warp→relight→unwarp
-        # print(f"📊 final unwarped range: min={output_image.min().item():.3f}, max={output_image.max().item():.3f}")
-        output_pil = transforms.ToPILImage()(output_image[0].cpu() * 0.5 + 0.5)
-        if not args.keep_aspect:
-            output_pil = resize_longest_side(output_pil, cropped_size, args.target_size)
-        final_path = output_path.with_name(output_path.stem + "_warp_relight_unwarp.png")
-        output_pil.save(final_path)
-        print(f"✅ Saved results for {input_path.name} in {out_dir}")
+    save_final_output(output_image, output_path, cropped_size, args)
 
 
 # ============================================================
 # Main
 # ============================================================
 def main():
-    args = load_config()  # <-- Changed here
 
-    # model = Pix2Pix_Turbo(pretrained_name=args.model_name, pretrained_path=args.model_path)
+    args = load_config()
+
     model = Pix2Pix_Turbo(pretrained_name=None, pretrained_path=args.model_path)
     model.set_eval()
     if args.use_fp16:
@@ -194,34 +219,28 @@ def main():
         yolo_model.set_classes(custom_classes)
 
     input_root = Path(args.input_dir)
-    subfolders = sorted([p for p in input_root.iterdir() if p.is_dir()])
 
-    img_list = []
-
-
-    # --------------------------------------------------
-    # Case 1: flat images: root/image/*.jpg
-    # --------------------------------------------------
+    # expect images under input_root/image/
     images_dir = input_root / "image"
-    if images_dir.exists() and images_dir.is_dir():
-        img_list = sorted([
-            p for p in images_dir.glob("*")
-            if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
-        ])
-        print(f"📁 Using flat image mode: {len(img_list)} images found in {images_dir}")
+    if not (images_dir.exists() and images_dir.is_dir()):
+        raise RuntimeError(f"❌ Expected images directory at {images_dir}")
 
+    img_list = sorted([
+        p for p in images_dir.glob("*")
+        if p.suffix.lower() in (".jpg", ".png", ".jpeg", ".webp")
+    ])
     if len(img_list) == 0:
         raise RuntimeError("❌ No images found to process.")
+    print(f"📁 Found {len(img_list)} images in {images_dir}")
 
-    torch.cuda.synchronize() # Wait for everything to be ready
+    torch.cuda.synchronize()
     start_time = time.perf_counter()
 
     for input_path in tqdm(img_list, desc="Processing"):
         process_image(input_path, model, face_app, yolo_model, args)
 
     torch.cuda.synchronize()
-    end_time = time.perf_counter()
-    total_time = end_time - start_time
+    total_time = time.perf_counter() - start_time
     print(f"\n⏱ Total inference time: {total_time:.2f} seconds")
     print(f"⏱ Avg time per image: {total_time / len(img_list):.3f} seconds")
 
